@@ -933,6 +933,7 @@
         }
         
         function setupKeyboardShortcuts() {
+            // Use capture phase to intercept events before xterm.js
             document.addEventListener('keydown', (e) => {
                 // Check for Alt + number combinations (focus switching)
                 if (e.altKey && !e.shiftKey && !e.ctrlKey) {
@@ -940,6 +941,7 @@
                         case '1':
                             // Alt + 1: Focus terminal
                             e.preventDefault();
+                            e.stopPropagation();
                             if (term && currentSessionId) {
                                 term.focus();
                             }
@@ -948,6 +950,7 @@
                         case '2':
                             // Alt + 2: Focus input field
                             e.preventDefault();
+                            e.stopPropagation();
                             const inputField = document.getElementById('inputField');
                             const wrapper = document.getElementById('inputPanelWrapper');
                             
@@ -961,6 +964,7 @@
                         case '3':
                             // Alt + 3: Toggle sidebar
                             e.preventDefault();
+                            e.stopPropagation();
                             toggleSidebar();
                             break;
                     }
@@ -972,12 +976,14 @@
                         case 'C':
                             // Alt + Shift + C: Create new session
                             e.preventDefault();
+                            e.stopPropagation();
                             createNewSession();
                             break;
                             
                         case 'R':
                             // Alt + Shift + R: Rename current session
                             e.preventDefault();
+                            e.stopPropagation();
                             if (currentSessionId) {
                                 const currentSession = sessions.find(s => s.id === currentSessionId);
                                 if (currentSession) {
@@ -999,12 +1005,14 @@
                         case 'P':
                             // Alt + Shift + P: Previous session
                             e.preventDefault();
+                            e.stopPropagation();
                             switchToPreviousSession();
                             break;
                             
                         case 'N':
                             // Alt + Shift + N: Next session
                             e.preventDefault();
+                            e.stopPropagation();
                             switchToNextSession();
                             break;
                     }
@@ -1016,6 +1024,7 @@
                     const inputField = document.getElementById('inputField');
                     if (document.activeElement === inputField) {
                         e.preventDefault();
+                        e.stopPropagation();
                         if (term && currentSessionId) {
                             term.focus();
                         }
@@ -1023,10 +1032,12 @@
                     // If sidebar is open, close it
                     const sidebar = document.getElementById('sidebar');
                     if (sidebar.classList.contains('open')) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         closeSidebar();
                     }
                 }
-            });
+            }, true); // Use capture phase to intercept before xterm
         }
         
         function switchToPreviousSession() {
