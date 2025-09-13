@@ -245,7 +245,7 @@
         }
         
         .input-panel-wrapper.collapsed {
-            transform: translateY(calc(100% - 25px)); /* Show only toggle button */
+            transform: translateY(100%); /* Completely hide panel */
         }
         
         /* Input panel */
@@ -259,8 +259,8 @@
         }
         
         .panel-toggle {
-            position: absolute;
-            top: -25px;
+            position: fixed;
+            bottom: 0;
             right: 20px;
             width: 32px;
             height: 25px;
@@ -273,8 +273,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
             z-index: 41;
+        }
+        
+        .input-panel-wrapper:not(.collapsed) .panel-toggle {
+            bottom: 60px; /* Height of input panel */
         }
         
         .panel-toggle:hover {
