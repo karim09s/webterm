@@ -752,11 +752,14 @@
             });
             
             socket.on('session-subscribed', ({ sessionId, sessionInfo }) => {
-                subscribedSessions.add(sessionId);
+                // Only mark as subscribed if not already subscribed
+                if (!subscribedSessions.has(sessionId)) {
+                    subscribedSessions.add(sessionId);
+                    console.log(`Subscribed to session ${sessionId}`);
+                }
                 if (!sessionBuffers.has(sessionId)) {
                     sessionBuffers.set(sessionId, []);
                 }
-                console.log(`Subscribed to session ${sessionId}`);
             });
             
             socket.on('session-not-found', ({ sessionId }) => {
@@ -806,12 +809,10 @@
             });
             
             socket.on('buffer-history', ({ sessionId, data }) => {
-                // Store buffer history
-                if (!sessionBuffers.has(sessionId)) {
-                    sessionBuffers.set(sessionId, []);
-                }
+                // Store buffer history - replace existing buffer with initial history
+                sessionBuffers.set(sessionId, [data]);
                 
-                // If this is the current session, display it
+                // Display if this is the current session
                 if (sessionId === currentSessionId && term) {
                     term.clear();
                     term.write(data);
@@ -1303,13 +1304,9 @@
             currentSessionId = sessionId;
             localStorage.setItem('lastSessionId', sessionId);
             
-            // Clear terminal and show buffered content for this session
+            // Clear terminal - buffer content will be displayed when buffer-history event arrives
             if (term) {
                 term.clear();
-                const buffer = sessionBuffers.get(sessionId);
-                if (buffer) {
-                    buffer.forEach(data => term.write(data));
-                }
             }
             
             // Update UI

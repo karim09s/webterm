@@ -128,16 +128,21 @@ class TerminalSession {
   }
   
   subscribe(socket) {
+    // Check if already subscribed
+    const wasSubscribed = this.subscribedSockets.has(socket);
+    
     // Add socket to subscribers
     this.subscribedSockets.add(socket);
     this.lastAccessedAt = new Date();
     
-    // Send buffer history to new subscriber
-    const recentBuffer = this.buffer.slice(-100); // Send last 100 entries
-    socket.emit('buffer-history', {
-      sessionId: this.id,
-      data: recentBuffer.map(b => b.data).join('')
-    });
+    // Only send buffer history if this is a new subscription
+    if (!wasSubscribed) {
+      const recentBuffer = this.buffer.slice(-100); // Send last 100 entries
+      socket.emit('buffer-history', {
+        sessionId: this.id,
+        data: recentBuffer.map(b => b.data).join('')
+      });
+    }
   }
   
   unsubscribe(socket) {
