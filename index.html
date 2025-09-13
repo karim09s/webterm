@@ -824,8 +824,9 @@
                 if (sessionId === currentSessionId && term) {
                     term.clear();
                     term.write(data);
-                    // Restore focus after buffer is displayed
+                    // Restore focus and key handler after buffer is displayed
                     setTimeout(() => {
+                        setupTerminalKeyHandler();
                         term.focus();
                     }, 50);
                 }
@@ -886,6 +887,10 @@
             
             term.open(document.getElementById('terminal'));
             fitAddon.fit();
+            
+            // Attach custom key handler BEFORE focusing
+            setupTerminalKeyHandler();
+            
             term.focus();
             
             // Handle terminal input
@@ -910,6 +915,116 @@
                         });
                     }
                 }
+            });
+        }
+        
+        function setupTerminalKeyHandler() {
+            if (!term) return;
+            
+            // Track if we just handled an Alt shortcut
+            let lastAltKey = null;
+            
+            // Use xterm's attachCustomKeyEventHandler to intercept keys before xterm processes them
+            term.attachCustomKeyEventHandler((e) => {
+                // Also block the keyup event for the number keys after Alt shortcuts
+                if (e.type === 'keyup' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code) && lastAltKey === e.code) {
+                    lastAltKey = null;
+                    return false;
+                }
+                
+                // Block both keydown and keyup events for our shortcuts
+                if (e.altKey) {
+                    // Check if this is one of our shortcut keys
+                    const isOurKey = (!e.shiftKey && !e.ctrlKey && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) ||
+                                     (e.shiftKey && !e.ctrlKey && ['KeyP', 'KeyN', 'KeyC', 'KeyR', 'KeyX'].includes(e.code));
+                    
+                    if (isOurKey) {
+                        // Handle keydown events
+                        if (e.type === 'keydown') {
+                            if (!e.shiftKey && !e.ctrlKey) {
+                                // Track which digit key was pressed with Alt
+                                if (['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
+                                    lastAltKey = e.code;
+                                }
+                                
+                                switch(e.code) {
+                                    case 'Digit1':
+                                        // Already in terminal, just prevent default
+                                        break;
+                                        
+                                    case 'Digit2':
+                                        const inputField = document.getElementById('inputField');
+                                        const wrapper = document.getElementById('inputPanelWrapper');
+                                        if (wrapper.classList.contains('collapsed')) {
+                                            togglePanel();
+                                        }
+                                        setTimeout(() => inputField.focus(), 50);
+                                        break;
+                                        
+                                    case 'Digit3':
+                                        toggleSidebar();
+                                        break;
+                                }
+                            }
+                            
+                            // Handle Alt+Shift combinations
+                            if (e.shiftKey && !e.ctrlKey) {
+                                switch(e.code) {
+                                    case 'KeyP':
+                                        switchToPreviousSession();
+                                        break;
+                                        
+                                    case 'KeyN':
+                                        switchToNextSession();
+                                        break;
+                                        
+                                    case 'KeyC':
+                                        createNewSession();
+                                        break;
+                                        
+                                    case 'KeyR':
+                                        if (currentSessionId) {
+                                            const currentSession = sessions.find(s => s.id === currentSessionId);
+                                            if (currentSession) {
+                                                renameSession(currentSessionId, currentSession.name);
+                                            }
+                                        }
+                                        break;
+                                        
+                                    case 'KeyX':
+                                        if (currentSessionId) {
+                                            if (confirm('Are you sure you want to terminate the current session?')) {
+                                                terminateSession(currentSessionId);
+                                            }
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+                        
+                        // Block all events (keydown, keyup, keypress) for our shortcuts
+                        return false;
+                    }
+                    
+                    // Block all other Alt combinations from reaching terminal
+                    return false;
+                }
+                
+                // Handle Escape key
+                if (e.type === 'keydown' && e.key === 'Escape') {
+                    const inputField = document.getElementById('inputField');
+                    if (document.activeElement === inputField) {
+                        if (term && currentSessionId) {
+                            term.focus();
+                        }
+                        return false;
+                    }
+                    // If in terminal, let Escape pass through for vim etc.
+                    return true;
+                }
+                
+                // Let all other keys pass through
+                return true;
             });
         }
         
@@ -941,148 +1056,92 @@
         }
         
         function setupKeyboardShortcuts() {
-            // Intercept at the highest level possible - capture phase on document
-            const handleShortcut = (e) => {
-                // First check if this is one of our shortcuts
-                let isOurShortcut = false;
+            // Global keyboard handler for when focus is NOT on terminal
+            document.addEventListener('keydown', (e) => {
+                // Skip if terminal has focus - terminal's own handler will handle it
+                if (document.activeElement === document.querySelector('.xterm-helper-textarea')) {
+                    return;
+                }
                 
-                // Check for Alt + number combinations (focus switching)
-                if (e.altKey && !e.shiftKey && !e.ctrlKey) {
-                    switch(e.key) {
-                        case '1':
-                            // Alt + 1: Focus terminal
-                            isOurShortcut = true;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            if (term && currentSessionId) {
-                                term.focus();
-                            }
-                            break;
-                            
-                        case '2':
-                            // Alt + 2: Focus input field
-                            isOurShortcut = true;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            const inputField = document.getElementById('inputField');
-                            const wrapper = document.getElementById('inputPanelWrapper');
-                            
-                            // If panel is hidden, show it first
-                            if (wrapper.classList.contains('collapsed')) {
-                                togglePanel();
-                            }
-                            inputField.focus();
-                            break;
-                            
-                        case '3':
-                            // Alt + 3: Toggle sidebar
-                            isOurShortcut = true;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            toggleSidebar();
-                            break;
+                if (e.altKey) {
+                    // Handle our shortcuts using e.code
+                    if (!e.shiftKey && !e.ctrlKey) {
+                        switch(e.code) {
+                            case 'Digit1':
+                                e.preventDefault();
+                                if (term && currentSessionId) {
+                                    term.focus();
+                                }
+                                break;
+                                
+                            case 'Digit2':
+                                e.preventDefault();
+                                const inputField = document.getElementById('inputField');
+                                const wrapper = document.getElementById('inputPanelWrapper');
+                                if (wrapper.classList.contains('collapsed')) {
+                                    togglePanel();
+                                }
+                                inputField.focus();
+                                break;
+                                
+                            case 'Digit3':
+                                e.preventDefault();
+                                toggleSidebar();
+                                break;
+                        }
+                    }
+                    
+                    // Handle Alt+Shift combinations using e.code
+                    if (e.shiftKey && !e.ctrlKey) {
+                        switch(e.code) {
+                            case 'KeyP':
+                                e.preventDefault();
+                                switchToPreviousSession();
+                                break;
+                                
+                            case 'KeyN':
+                                e.preventDefault();
+                                switchToNextSession();
+                                break;
+                                
+                            case 'KeyC':
+                                e.preventDefault();
+                                createNewSession();
+                                break;
+                                
+                            case 'KeyR':
+                                e.preventDefault();
+                                if (currentSessionId) {
+                                    const currentSession = sessions.find(s => s.id === currentSessionId);
+                                    if (currentSession) {
+                                        renameSession(currentSessionId, currentSession.name);
+                                    }
+                                }
+                                break;
+                                
+                            case 'KeyX':
+                                e.preventDefault();
+                                if (currentSessionId) {
+                                    if (confirm('Are you sure you want to terminate the current session?')) {
+                                        terminateSession(currentSessionId);
+                                    }
+                                }
+                                break;
+                        }
                     }
                 }
                 
-                // Check for Alt + Shift combinations (session management)
-                if (e.altKey && e.shiftKey) {
-                    switch(e.key.toUpperCase()) {
-                        case 'C':
-                            // Alt + Shift + C: Create new session
-                            isOurShortcut = true;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            createNewSession();
-                            break;
-                            
-                        case 'R':
-                            // Alt + Shift + R: Rename current session
-                            isOurShortcut = true;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            if (currentSessionId) {
-                                const currentSession = sessions.find(s => s.id === currentSessionId);
-                                if (currentSession) {
-                                    renameSession(currentSessionId, currentSession.name);
-                                }
-                            }
-                            break;
-                            
-                        case 'X':
-                            // Alt + Shift + X: Terminate current session
-                            e.preventDefault();
-                            if (currentSessionId) {
-                                if (confirm('Are you sure you want to terminate the current session?')) {
-                                    terminateSession(currentSessionId);
-                                }
-                            }
-                            break;
-                            
-                        case 'P':
-                            // Alt + Shift + P: Previous session
-                            isOurShortcut = true;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            switchToPreviousSession();
-                            break;
-                            
-                        case 'N':
-                            // Alt + Shift + N: Next session
-                            isOurShortcut = true;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            switchToNextSession();
-                            break;
-                    }
-                }
-                
-                // Escape key handling
+                // Handle Escape key
                 if (e.key === 'Escape') {
-                    // If input field is focused, focus terminal
                     const inputField = document.getElementById('inputField');
                     if (document.activeElement === inputField) {
                         e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
                         if (term && currentSessionId) {
                             term.focus();
                         }
                     }
-                    // If sidebar is open, close it
-                    const sidebar = document.getElementById('sidebar');
-                    if (sidebar.classList.contains('open')) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        closeSidebar();
-                    }
                 }
-                
-                // If this was our shortcut, return false to stop propagation
-                return !isOurShortcut;
-            };
-            
-            // Attach at the highest priority - capture phase on window
-            window.addEventListener('keydown', handleShortcut, true);
-            
-            // Also prevent keyup and keypress for our shortcuts
-            window.addEventListener('keyup', (e) => {
-                if (e.altKey && (
-                    (!e.shiftKey && e.key >= '1' && e.key <= '3') ||
-                    (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key))
-                )) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                }
-            }, true);
+            });
         }
         
         function switchToPreviousSession() {
@@ -1389,11 +1448,11 @@
             }
             updateSessionList();
             
-            // Restore terminal focus after switching
+            // Restore terminal focus and key handler after switching
             setTimeout(() => {
                 if (term && currentSessionId) {
+                    setupTerminalKeyHandler();
                     term.focus();
-                    // Handler will be re-attached by onFocus event
                 }
             }, 100);
         }
