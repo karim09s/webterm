@@ -218,6 +218,12 @@
             position: relative;
             background-color: #1e1e1e;
             overflow: hidden;
+            padding-bottom: 60px; /* Space for input panel */
+            transition: padding-bottom 0.3s ease;
+        }
+        
+        .terminal-wrapper.expanded {
+            padding-bottom: 0;
         }
         
         #terminal {
@@ -236,43 +242,39 @@
             display: flex;
             align-items: flex-end;
             gap: 10px;
-            position: relative;
-            transition: height 0.3s ease;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transition: transform 0.3s ease;
+            z-index: 40;
         }
         
         .input-panel.collapsed {
-            display: none;
+            transform: translateY(100%);
         }
         
         .panel-toggle {
-            position: absolute;
-            top: -20px;
-            right: 10px;
-            width: 28px;
-            height: 20px;
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            width: 32px;
+            height: 24px;
             background: #2d2d30;
             border: 1px solid #3e3e42;
-            border-bottom: none;
             border-radius: 8px 8px 0 0;
             color: #999;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-            z-index: 51;
+            transition: all 0.3s ease;
+            z-index: 41;
         }
         
-        .panel-toggle.floating {
-            position: fixed;
-            bottom: 10px;
-            right: 20px;
-            top: auto;
-            width: 32px;
-            height: 32px;
-            border: 1px solid #3e3e42;
-            border-radius: 16px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        .panel-toggle.collapsed {
+            bottom: 0;
+            border-radius: 8px 8px 0 0;
         }
         
         .panel-toggle:hover {
@@ -628,11 +630,6 @@
         
         <!-- Input panel -->
         <div class="input-panel" id="inputPanel" style="display: none;">
-            <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">
-                <svg viewBox="0 0 24 24">
-                    <path d="M7 10l5 5 5-5z"/>
-                </svg>
-            </button>
             <textarea class="input-field" id="inputField" 
                 placeholder="Type your command... (Enter to send, Shift+Enter for new line)"></textarea>
             <button class="send-button" id="sendButton">
@@ -641,6 +638,13 @@
                 </svg>
             </button>
         </div>
+        
+        <!-- Panel toggle button -->
+        <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" style="display: none;">
+            <svg viewBox="0 0 24 24">
+                <path d="M7 10l5 5 5-5z"/>
+            </svg>
+        </button>
         
         <!-- Drag overlay -->
         <div class="drag-overlay" id="dragOverlay">
@@ -1141,30 +1145,23 @@
             const panelToggle = document.getElementById('panelToggle');
             const terminalWrapper = document.querySelector('.terminal-wrapper');
             
-            if (panelToggle.classList.contains('floating')) {
+            if (inputPanel.classList.contains('collapsed')) {
                 // Panel is hidden, show it
-                inputPanel.style.display = 'flex';
-                inputPanel.insertBefore(panelToggle, inputPanel.firstChild);
+                inputPanel.classList.remove('collapsed');
                 panelToggle.classList.remove('collapsed');
-                panelToggle.classList.remove('floating');
-                terminalWrapper.style.height = '';
+                terminalWrapper.classList.remove('expanded');
             } else {
                 // Panel is visible, hide it
-                inputPanel.style.display = 'none';
-                
-                // Move toggle button to floating position
-                document.body.appendChild(panelToggle);
+                inputPanel.classList.add('collapsed');
                 panelToggle.classList.add('collapsed');
-                panelToggle.classList.add('floating');
-                panelToggle.style.display = 'flex';
-                terminalWrapper.style.height = '100%';
+                terminalWrapper.classList.add('expanded');
             }
             
-            // Refit terminal after toggle
+            // Refit terminal after animation
             if (fitAddon) {
                 setTimeout(() => {
                     fitAddon.fit();
-                }, 100);
+                }, 300);
             }
         }
         
@@ -1310,7 +1307,13 @@
         
         function showTerminal() {
             document.getElementById('terminal').style.display = 'block';
-            document.getElementById('inputPanel').style.display = 'flex';
+            const inputPanel = document.getElementById('inputPanel');
+            const panelToggle = document.getElementById('panelToggle');
+            
+            // Show panel and toggle button
+            inputPanel.style.display = 'flex';
+            panelToggle.style.display = 'flex';
+            
             document.getElementById('noSessionMessage').style.display = 'none';
             
             if (fitAddon) {
@@ -1325,11 +1328,13 @@
         
         function showNoSession() {
             document.getElementById('terminal').style.display = 'none';
-            document.getElementById('inputPanel').style.display = 'none';
+            const inputPanel = document.getElementById('inputPanel');
             const panelToggle = document.getElementById('panelToggle');
-            if (panelToggle && panelToggle.classList.contains('floating')) {
-                panelToggle.style.display = 'none';
-            }
+            
+            // Hide both panel and toggle
+            inputPanel.style.display = 'none';
+            panelToggle.style.display = 'none';
+            
             document.getElementById('noSessionMessage').style.display = 'block';
             document.getElementById('currentSessionName').textContent = 'No Session';
         }
