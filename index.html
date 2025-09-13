@@ -890,15 +890,33 @@
             
             // Override xterm's attachCustomKeyEventHandler to intercept Alt key combinations
             term.attachCustomKeyEventHandler((e) => {
-                // If Alt key is pressed with our shortcuts, prevent xterm from handling it
-                if (e.altKey && (
-                    (e.key >= '1' && e.key <= '3') || // Alt + 1/2/3
-                    (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key)) // Alt + Shift + C/R/P/N
-                )) {
-                    return false; // Prevent xterm from handling this key
+                // Block all key event types for our shortcuts
+                if (e.type === 'keydown' || e.type === 'keyup' || e.type === 'keypress') {
+                    if (e.altKey && (
+                        (e.key >= '1' && e.key <= '3') || // Alt + 1/2/3
+                        (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key)) // Alt + Shift + C/R/P/N
+                    )) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        return false; // Prevent xterm from handling this key
+                    }
                 }
                 return true; // Let xterm handle other keys normally
             });
+            
+            // Also intercept at the terminal element level
+            const terminalElement = document.getElementById('terminal');
+            terminalElement.addEventListener('keydown', (e) => {
+                if (e.altKey && (
+                    (e.key >= '1' && e.key <= '3') ||
+                    (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key))
+                )) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+            }, true);
             
             // Handle terminal input
             term.onData((data) => {
@@ -963,6 +981,7 @@
                             // Alt + 1: Focus terminal
                             e.preventDefault();
                             e.stopPropagation();
+                            e.stopImmediatePropagation();
                             if (term && currentSessionId) {
                                 term.focus();
                             }
@@ -972,6 +991,7 @@
                             // Alt + 2: Focus input field
                             e.preventDefault();
                             e.stopPropagation();
+                            e.stopImmediatePropagation();
                             const inputField = document.getElementById('inputField');
                             const wrapper = document.getElementById('inputPanelWrapper');
                             
@@ -986,6 +1006,7 @@
                             // Alt + 3: Toggle sidebar
                             e.preventDefault();
                             e.stopPropagation();
+                            e.stopImmediatePropagation();
                             toggleSidebar();
                             break;
                     }
@@ -998,6 +1019,7 @@
                             // Alt + Shift + C: Create new session
                             e.preventDefault();
                             e.stopPropagation();
+                            e.stopImmediatePropagation();
                             createNewSession();
                             break;
                             
@@ -1005,6 +1027,7 @@
                             // Alt + Shift + R: Rename current session
                             e.preventDefault();
                             e.stopPropagation();
+                            e.stopImmediatePropagation();
                             if (currentSessionId) {
                                 const currentSession = sessions.find(s => s.id === currentSessionId);
                                 if (currentSession) {
@@ -1027,6 +1050,7 @@
                             // Alt + Shift + P: Previous session
                             e.preventDefault();
                             e.stopPropagation();
+                            e.stopImmediatePropagation();
                             switchToPreviousSession();
                             break;
                             
@@ -1034,6 +1058,7 @@
                             // Alt + Shift + N: Next session
                             e.preventDefault();
                             e.stopPropagation();
+                            e.stopImmediatePropagation();
                             switchToNextSession();
                             break;
                     }
@@ -1046,6 +1071,7 @@
                     if (document.activeElement === inputField) {
                         e.preventDefault();
                         e.stopPropagation();
+                        e.stopImmediatePropagation();
                         if (term && currentSessionId) {
                             term.focus();
                         }
@@ -1055,6 +1081,7 @@
                     if (sidebar.classList.contains('open')) {
                         e.preventDefault();
                         e.stopPropagation();
+                        e.stopImmediatePropagation();
                         closeSidebar();
                     }
                 }
@@ -1369,10 +1396,26 @@
             }
             updateSessionList();
             
-            // Restore terminal focus after switching
+            // Restore terminal focus and re-attach key handler after switching
             setTimeout(() => {
                 if (term && currentSessionId) {
                     term.focus();
+                    
+                    // Re-attach custom key handler to ensure it's active
+                    term.attachCustomKeyEventHandler((e) => {
+                        if (e.type === 'keydown' || e.type === 'keyup' || e.type === 'keypress') {
+                            if (e.altKey && (
+                                (e.key >= '1' && e.key <= '3') ||
+                                (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key))
+                            )) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                e.stopImmediatePropagation();
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
                 }
             }, 100);
         }
