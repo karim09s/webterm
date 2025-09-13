@@ -245,7 +245,7 @@
         }
         
         .input-panel-wrapper.collapsed {
-            transform: translateY(100%); /* Completely hide panel */
+            transform: translateY(61px); /* Move down by exact panel height (24px padding + 36px input + 1px border) */
         }
         
         /* Input panel */
@@ -259,8 +259,8 @@
         }
         
         .panel-toggle {
-            position: fixed;
-            bottom: 0;
+            position: absolute;
+            top: -25px;
             right: 20px;
             width: 32px;
             height: 25px;
@@ -273,12 +273,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: background-color 0.2s;
             z-index: 41;
-        }
-        
-        .input-panel-wrapper:not(.collapsed) .panel-toggle {
-            bottom: 60px; /* Height of input panel */
         }
         
         .panel-toggle:hover {
