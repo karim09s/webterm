@@ -236,6 +236,47 @@
             display: flex;
             align-items: flex-end;
             gap: 10px;
+            position: relative;
+            transition: height 0.3s ease;
+        }
+        
+        .input-panel.collapsed {
+            height: 32px;
+            padding: 4px 12px;
+            overflow: hidden;
+        }
+        
+        .panel-toggle {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .panel-toggle:hover {
+            background-color: #3e3e42;
+            color: #ccc;
+        }
+        
+        .panel-toggle svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            transition: transform 0.3s;
+        }
+        
+        .input-panel.collapsed .panel-toggle svg {
+            transform: rotate(180deg);
         }
         
         .input-field {
@@ -257,6 +298,25 @@
         .input-field:focus {
             outline: none;
             border-color: #4CAF50;
+        }
+        
+        /* Custom scrollbar for input field */
+        .input-field::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .input-field::-webkit-scrollbar-track {
+            background: #2d2d30;
+            border-radius: 4px;
+        }
+        
+        .input-field::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 4px;
+        }
+        
+        .input-field::-webkit-scrollbar-thumb:hover {
+            background: #4e4e4e;
         }
         
         .send-button {
@@ -556,6 +616,11 @@
         
         <!-- Input panel -->
         <div class="input-panel" id="inputPanel" style="display: none;">
+            <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 10l5 5 5-5z"/>
+                </svg>
+            </button>
             <textarea class="input-field" id="inputField" 
                 placeholder="Type your command... (Enter to send, Shift+Enter for new line)"></textarea>
             <button class="send-button" id="sendButton">
@@ -927,6 +992,26 @@
                 return `"${path.replace(/"/g, '\\"')}"`;
             }
             return path;
+        }
+        
+        function togglePanel() {
+            const inputPanel = document.getElementById('inputPanel');
+            inputPanel.classList.toggle('collapsed');
+            
+            // Adjust terminal height when panel is collapsed/expanded
+            const terminalWrapper = document.querySelector('.terminal-wrapper');
+            if (inputPanel.classList.contains('collapsed')) {
+                terminalWrapper.style.height = 'calc(100% - 32px)';
+            } else {
+                terminalWrapper.style.height = '';
+            }
+            
+            // Refit terminal after toggle
+            if (fitAddon) {
+                setTimeout(() => {
+                    fitAddon.fit();
+                }, 300); // Wait for animation to complete
+            }
         }
         
         function toggleSidebar() {
