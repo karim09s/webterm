@@ -888,42 +888,8 @@
             fitAddon.fit();
             term.focus();
             
-            // Override xterm's attachCustomKeyEventHandler to intercept Alt key combinations
-            term.attachCustomKeyEventHandler((e) => {
-                // Only block our specific Alt shortcuts on keydown
-                if (e.type === 'keydown' && e.altKey) {
-                    if ((e.key >= '1' && e.key <= '3') || // Alt + 1/2/3
-                        (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key))) { // Alt + Shift + C/R/P/N
-                        return false; // Prevent xterm from handling this key
-                    }
-                }
-                return true; // Let xterm handle other keys normally
-            });
-            
-            // Also intercept at the terminal element level
-            const terminalElement = document.getElementById('terminal');
-            terminalElement.addEventListener('keydown', (e) => {
-                if (e.altKey && (
-                    (e.key >= '1' && e.key <= '3') ||
-                    (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key))
-                )) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                }
-            }, true);
-            
-            // Handle terminal input - but filter out our Alt shortcuts
+            // Handle terminal input
             term.onData((data) => {
-                // Check if this is an Alt key combination that we handle
-                // Alt sequences typically start with ESC (0x1b)
-                if (data.charCodeAt(0) === 0x1b) {
-                    const char = data.charAt(1);
-                    // Block our Alt shortcuts from being sent to terminal
-                    if (char >= '1' && char <= '3') return; // Alt+1/2/3
-                    if (['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(char)) return; // Alt+Shift+C/R/P/N
-                }
-                
                 if (currentSessionId) {
                     socket.emit('terminal-input', {
                         sessionId: currentSessionId,
@@ -975,14 +941,17 @@
         }
         
         function setupKeyboardShortcuts() {
-            // Use capture phase to intercept events before xterm.js
-            // Also attach to window for higher priority
+            // Intercept at the highest level possible - capture phase on document
             const handleShortcut = (e) => {
+                // First check if this is one of our shortcuts
+                let isOurShortcut = false;
+                
                 // Check for Alt + number combinations (focus switching)
                 if (e.altKey && !e.shiftKey && !e.ctrlKey) {
                     switch(e.key) {
                         case '1':
                             // Alt + 1: Focus terminal
+                            isOurShortcut = true;
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -993,6 +962,7 @@
                             
                         case '2':
                             // Alt + 2: Focus input field
+                            isOurShortcut = true;
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -1008,6 +978,7 @@
                             
                         case '3':
                             // Alt + 3: Toggle sidebar
+                            isOurShortcut = true;
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -1021,6 +992,7 @@
                     switch(e.key.toUpperCase()) {
                         case 'C':
                             // Alt + Shift + C: Create new session
+                            isOurShortcut = true;
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -1029,6 +1001,7 @@
                             
                         case 'R':
                             // Alt + Shift + R: Rename current session
+                            isOurShortcut = true;
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -1052,6 +1025,7 @@
                             
                         case 'P':
                             // Alt + Shift + P: Previous session
+                            isOurShortcut = true;
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -1060,6 +1034,7 @@
                             
                         case 'N':
                             // Alt + Shift + N: Next session
+                            isOurShortcut = true;
                             e.preventDefault();
                             e.stopPropagation();
                             e.stopImmediatePropagation();
@@ -1089,11 +1064,25 @@
                         closeSidebar();
                     }
                 }
+                
+                // If this was our shortcut, return false to stop propagation
+                return !isOurShortcut;
             };
             
-            // Attach to both window and document with capture phase
+            // Attach at the highest priority - capture phase on window
             window.addEventListener('keydown', handleShortcut, true);
-            document.addEventListener('keydown', handleShortcut, true);
+            
+            // Also prevent keyup and keypress for our shortcuts
+            window.addEventListener('keyup', (e) => {
+                if (e.altKey && (
+                    (!e.shiftKey && e.key >= '1' && e.key <= '3') ||
+                    (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key))
+                )) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+            }, true);
         }
         
         function switchToPreviousSession() {
