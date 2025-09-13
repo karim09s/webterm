@@ -884,8 +884,8 @@
                 // Check for Alt + Shift combinations
                 if (e.altKey && e.shiftKey) {
                     switch(e.key.toUpperCase()) {
-                        case 'N':
-                            // Alt + Shift + N: New session
+                        case 'C':
+                            // Alt + Shift + C: Create new session
                             e.preventDefault();
                             createNewSession();
                             break;
@@ -911,14 +911,14 @@
                             }
                             break;
                             
-                        case 'ARROWUP':
-                            // Alt + Shift + Up: Previous session
+                        case 'P':
+                            // Alt + Shift + P: Previous session
                             e.preventDefault();
                             switchToPreviousSession();
                             break;
                             
-                        case 'ARROWDOWN':
-                            // Alt + Shift + Down: Next session
+                        case 'N':
+                            // Alt + Shift + N: Next session
                             e.preventDefault();
                             switchToNextSession();
                             break;
