@@ -121,8 +121,8 @@ webterm/
 ## Browser Compatibility
 
 - Chrome/Edge (recommended)
+- Safari (recommended)
 - Firefox
-- Safari
 - Mobile browsers (with on-screen keyboard support)
 
 ## Known Limitations
