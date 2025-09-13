@@ -1308,9 +1308,14 @@
             currentSessionId = sessionId;
             localStorage.setItem('lastSessionId', sessionId);
             
-            // Clear terminal - buffer content will be displayed when buffer-history event arrives
+            // Clear terminal
             if (term) {
                 term.clear();
+            }
+            
+            // Request buffer for this session (will trigger buffer-history event)
+            if (subscribedSessions.has(sessionId)) {
+                socket.emit('request-session-buffer', sessionId);
             }
             
             // Update UI

@@ -243,6 +243,19 @@ io.on('connection', (socket) => {
     console.log(`Client ${socket.id} subscribed to session ${sessionId}`);
   });
   
+  // Request buffer for a session (used when switching to already-subscribed session)
+  socket.on('request-session-buffer', (sessionId) => {
+    const session = sessions.get(sessionId);
+    
+    if (session && session.subscribedSockets.has(socket)) {
+      const recentBuffer = session.buffer.slice(-100);
+      socket.emit('buffer-history', {
+        sessionId: session.id,
+        data: recentBuffer.map(b => b.data).join('')
+      });
+    }
+  });
+  
   // Unsubscribe from session
   socket.on('unsubscribe-from-session', (sessionId) => {
     const session = sessions.get(sessionId);
