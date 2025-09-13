@@ -881,7 +881,39 @@
         
         function setupKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
-                // Check for Alt + Shift combinations
+                // Check for Alt + number combinations (focus switching)
+                if (e.altKey && !e.shiftKey && !e.ctrlKey) {
+                    switch(e.key) {
+                        case '1':
+                            // Alt + 1: Focus terminal
+                            e.preventDefault();
+                            if (term && currentSessionId) {
+                                term.focus();
+                            }
+                            break;
+                            
+                        case '2':
+                            // Alt + 2: Focus input field
+                            e.preventDefault();
+                            const inputField = document.getElementById('inputField');
+                            const inputPanel = document.getElementById('inputPanel');
+                            
+                            // If panel is hidden, show it first
+                            if (inputPanel.style.display === 'none') {
+                                togglePanel();
+                            }
+                            inputField.focus();
+                            break;
+                            
+                        case '3':
+                            // Alt + 3: Toggle sidebar
+                            e.preventDefault();
+                            toggleSidebar();
+                            break;
+                    }
+                }
+                
+                // Check for Alt + Shift combinations (session management)
                 if (e.altKey && e.shiftKey) {
                     switch(e.key.toUpperCase()) {
                         case 'C':
@@ -922,6 +954,23 @@
                             e.preventDefault();
                             switchToNextSession();
                             break;
+                    }
+                }
+                
+                // Escape key handling
+                if (e.key === 'Escape') {
+                    // If input field is focused, focus terminal
+                    const inputField = document.getElementById('inputField');
+                    if (document.activeElement === inputField) {
+                        e.preventDefault();
+                        if (term && currentSessionId) {
+                            term.focus();
+                        }
+                    }
+                    // If sidebar is open, close it
+                    const sidebar = document.getElementById('sidebar');
+                    if (sidebar.classList.contains('open')) {
+                        closeSidebar();
                     }
                 }
             });
