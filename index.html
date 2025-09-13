@@ -234,14 +234,8 @@
             padding-bottom: 18px;  /* Extra padding at bottom */
         }
         
-        /* Input panel */
-        .input-panel {
-            background-color: #2d2d30;
-            border-top: 1px solid #3e3e42;
-            padding: 12px;
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
+        /* Input panel wrapper for animation */
+        .input-panel-wrapper {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -250,31 +244,41 @@
             z-index: 40;
         }
         
-        .input-panel.collapsed {
-            transform: translateY(100%);
+        .input-panel-wrapper.collapsed {
+            transform: translateY(calc(100% - 24px)); /* Keep toggle button visible */
+        }
+        
+        /* Input panel */
+        .input-panel {
+            background-color: #2d2d30;
+            border-top: 1px solid #3e3e42;
+            padding: 12px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
         }
         
         .panel-toggle {
-            position: fixed;
-            bottom: 60px;
+            position: absolute;
+            top: -24px;
             right: 20px;
             width: 32px;
             height: 24px;
             background: #2d2d30;
             border: 1px solid #3e3e42;
+            border-bottom: none;
             border-radius: 8px 8px 0 0;
             color: #999;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: background-color 0.2s;
             z-index: 41;
         }
         
         .panel-toggle.collapsed {
-            bottom: 0;
-            border-radius: 8px 8px 0 0;
+            /* No position change needed, moves with wrapper */
         }
         
         .panel-toggle:hover {
@@ -628,23 +632,26 @@
             </div>
         </div>
         
-        <!-- Input panel -->
-        <div class="input-panel" id="inputPanel" style="display: none;">
-            <textarea class="input-field" id="inputField" 
-                placeholder="Type your command... (Enter to send, Shift+Enter for new line)"></textarea>
-            <button class="send-button" id="sendButton">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z"/>
+        <!-- Input panel wrapper -->
+        <div class="input-panel-wrapper" id="inputPanelWrapper" style="display: none;">
+            <!-- Panel toggle button -->
+            <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 10l5 5 5-5z"/>
                 </svg>
             </button>
+            
+            <!-- Input panel -->
+            <div class="input-panel" id="inputPanel">
+                <textarea class="input-field" id="inputField" 
+                    placeholder="Type your command... (Enter to send, Shift+Enter for new line)"></textarea>
+                <button class="send-button" id="sendButton">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
-        
-        <!-- Panel toggle button -->
-        <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" style="display: none;">
-            <svg viewBox="0 0 24 24">
-                <path d="M7 10l5 5 5-5z"/>
-            </svg>
-        </button>
         
         <!-- Drag overlay -->
         <div class="drag-overlay" id="dragOverlay">
@@ -900,10 +907,10 @@
                             // Alt + 2: Focus input field
                             e.preventDefault();
                             const inputField = document.getElementById('inputField');
-                            const inputPanel = document.getElementById('inputPanel');
+                            const wrapper = document.getElementById('inputPanelWrapper');
                             
                             // If panel is hidden, show it first
-                            if (inputPanel.style.display === 'none') {
+                            if (wrapper.classList.contains('collapsed')) {
                                 togglePanel();
                             }
                             inputField.focus();
@@ -1141,18 +1148,18 @@
         }
         
         function togglePanel() {
-            const inputPanel = document.getElementById('inputPanel');
+            const wrapper = document.getElementById('inputPanelWrapper');
             const panelToggle = document.getElementById('panelToggle');
             const terminalWrapper = document.querySelector('.terminal-wrapper');
             
-            if (inputPanel.classList.contains('collapsed')) {
+            if (wrapper.classList.contains('collapsed')) {
                 // Panel is hidden, show it
-                inputPanel.classList.remove('collapsed');
+                wrapper.classList.remove('collapsed');
                 panelToggle.classList.remove('collapsed');
                 terminalWrapper.classList.remove('expanded');
             } else {
                 // Panel is visible, hide it
-                inputPanel.classList.add('collapsed');
+                wrapper.classList.add('collapsed');
                 panelToggle.classList.add('collapsed');
                 terminalWrapper.classList.add('expanded');
             }
@@ -1307,12 +1314,10 @@
         
         function showTerminal() {
             document.getElementById('terminal').style.display = 'block';
-            const inputPanel = document.getElementById('inputPanel');
-            const panelToggle = document.getElementById('panelToggle');
+            const wrapper = document.getElementById('inputPanelWrapper');
             
-            // Show panel and toggle button
-            inputPanel.style.display = 'flex';
-            panelToggle.style.display = 'flex';
+            // Show panel wrapper
+            wrapper.style.display = 'block';
             
             document.getElementById('noSessionMessage').style.display = 'none';
             
@@ -1328,12 +1333,10 @@
         
         function showNoSession() {
             document.getElementById('terminal').style.display = 'none';
-            const inputPanel = document.getElementById('inputPanel');
-            const panelToggle = document.getElementById('panelToggle');
+            const wrapper = document.getElementById('inputPanelWrapper');
             
-            // Hide both panel and toggle
-            inputPanel.style.display = 'none';
-            panelToggle.style.display = 'none';
+            // Hide panel wrapper
+            wrapper.style.display = 'none';
             
             document.getElementById('noSessionMessage').style.display = 'block';
             document.getElementById('currentSessionName').textContent = 'No Session';
