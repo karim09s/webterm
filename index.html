@@ -864,18 +864,18 @@
                     const escapedPath = shellEscape(result.path);
                     
                     if (target === 'terminal') {
-                        // Send path to terminal
+                        // Send path to terminal with trailing space
                         if (currentSessionId) {
                             socket.emit('terminal-input', {
                                 sessionId: currentSessionId,
-                                data: escapedPath
+                                data: escapedPath + ' '
                             });
                         }
                     } else if (target === 'input') {
-                        // Insert path into input field
+                        // Insert path into input field with trailing space
                         const inputField = document.getElementById('inputField');
                         const currentValue = inputField.value;
-                        const newValue = currentValue ? currentValue + ' ' + escapedPath : escapedPath;
+                        const newValue = currentValue ? currentValue + ' ' + escapedPath + ' ' : escapedPath + ' ';
                         inputField.value = newValue;
                         
                         // Auto-resize the input field
