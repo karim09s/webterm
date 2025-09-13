@@ -113,8 +113,9 @@ This approach provides:
 webterm/
 ├── server.js       # Express server and session management
 ├── index.html      # Frontend application
-├── package.json    # Dependencies
-└── uploads/        # Uploaded files directory (auto-created)
+└── package.json    # Dependencies
+
+~/wt_upload/        # Uploaded files directory (auto-created in home directory)
 ```
 
 ## Browser Compatibility
