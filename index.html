@@ -245,7 +245,7 @@
         }
         
         .input-panel-wrapper.collapsed {
-            transform: translateY(calc(100% - 24px)); /* Keep toggle button visible */
+            transform: translateY(100%); /* Completely hide panel */
         }
         
         /* Input panel */
@@ -273,12 +273,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
             z-index: 41;
         }
         
-        .panel-toggle.collapsed {
-            /* No position change needed, moves with wrapper */
+        .input-panel-wrapper.collapsed .panel-toggle {
+            transform: translateY(-100%); /* Keep button visible when panel is hidden */
         }
         
         .panel-toggle:hover {
