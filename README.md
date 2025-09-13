@@ -129,7 +129,6 @@ webterm/
 
 - Terminal size is fixed on session creation
 - File uploads are stored locally on the server
-- No built-in file download capability (use `cat` or other tools)
 - Sessions are stored in memory (lost on server restart)
 
 ## Contributing
