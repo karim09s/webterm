@@ -716,6 +716,7 @@
             
             term.open(document.getElementById('terminal'));
             fitAddon.fit();
+            term.focus();
             
             // Handle terminal input
             term.onData((data) => {
@@ -1044,6 +1045,11 @@
             
             if (fitAddon) {
                 fitAddon.fit();
+            }
+            
+            // Focus terminal to show cursor
+            if (term) {
+                term.focus();
             }
         }
         
