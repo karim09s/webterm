@@ -20,7 +20,7 @@ A web-based terminal emulator with persistent session management, multi-session 
   - Files are uploaded to `~/wt_upload/` directory
   - File path automatically inserted at cursor position
   - Maximum file size: 100MB
-  - **Designed for AI tools**: Path insertion is optimized for tools like Claude that can read files from provided paths
+  - **Designed for AI CLI tools**: Path insertion is optimized for tools like Claude Code that can read files from provided paths
   - Perfect for quickly sharing images/files with AI assistants - just drop and the path is ready
   - **Visual Feedback**: Drop zone highlights when dragging files over the terminal
 - **Smart Path Insertion**: Paths with spaces are automatically quoted
