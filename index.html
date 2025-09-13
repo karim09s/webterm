@@ -918,8 +918,17 @@
                 }
             }, true);
             
-            // Handle terminal input
+            // Handle terminal input - but filter out our Alt shortcuts
             term.onData((data) => {
+                // Check if this is an Alt key combination that we handle
+                // Alt sequences typically start with ESC (0x1b)
+                if (data.charCodeAt(0) === 0x1b) {
+                    const char = data.charAt(1);
+                    // Block our Alt shortcuts from being sent to terminal
+                    if (char >= '1' && char <= '3') return; // Alt+1/2/3
+                    if (['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(char)) return; // Alt+Shift+C/R/P/N
+                }
+                
                 if (currentSessionId) {
                     socket.emit('terminal-input', {
                         sessionId: currentSessionId,
@@ -1487,9 +1496,17 @@
         function showTerminal() {
             document.getElementById('terminal').style.display = 'block';
             const wrapper = document.getElementById('inputPanelWrapper');
+            const terminalWrapper = document.querySelector('.terminal-wrapper');
             
             // Show panel wrapper
             wrapper.style.display = 'block';
+            
+            // Ensure terminal wrapper has correct padding based on panel state
+            if (wrapper.classList.contains('collapsed')) {
+                terminalWrapper.classList.add('expanded');
+            } else {
+                terminalWrapper.classList.remove('expanded');
+            }
             
             document.getElementById('noSessionMessage').style.display = 'none';
             
