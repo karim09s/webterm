@@ -880,6 +880,18 @@
             fitAddon.fit();
             term.focus();
             
+            // Override xterm's attachCustomKeyEventHandler to intercept Alt key combinations
+            term.attachCustomKeyEventHandler((e) => {
+                // If Alt key is pressed with our shortcuts, prevent xterm from handling it
+                if (e.altKey && (
+                    (e.key >= '1' && e.key <= '3') || // Alt + 1/2/3
+                    (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key)) // Alt + Shift + C/R/P/N
+                )) {
+                    return false; // Prevent xterm from handling this key
+                }
+                return true; // Let xterm handle other keys normally
+            });
+            
             // Handle terminal input
             term.onData((data) => {
                 if (currentSessionId) {
@@ -934,7 +946,8 @@
         
         function setupKeyboardShortcuts() {
             // Use capture phase to intercept events before xterm.js
-            document.addEventListener('keydown', (e) => {
+            // Also attach to window for higher priority
+            const handleShortcut = (e) => {
                 // Check for Alt + number combinations (focus switching)
                 if (e.altKey && !e.shiftKey && !e.ctrlKey) {
                     switch(e.key) {
@@ -1037,7 +1050,11 @@
                         closeSidebar();
                     }
                 }
-            }, true); // Use capture phase to intercept before xterm
+            };
+            
+            // Attach to both window and document with capture phase
+            window.addEventListener('keydown', handleShortcut, true);
+            document.addEventListener('keydown', handleShortcut, true);
         }
         
         function switchToPreviousSession() {
