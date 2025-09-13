@@ -856,8 +856,6 @@
                 customGlyphs: true,
                 drawBoldTextInBrightColors: true,
                 scrollback: 10000,
-                altClickMovesCursor: false,  // Disable Alt key handling
-                macOptionIsMeta: false,       // Disable Alt/Option as Meta key
                 theme: {
                     background: '#1e1e1e',
                     foreground: '#cccccc',
@@ -890,34 +888,16 @@
             fitAddon.fit();
             term.focus();
             
-            // Create a function to attach the custom key handler
-            const attachKeyHandler = () => {
-                term.attachCustomKeyEventHandler((e) => {
-                    // Block all key event types for our shortcuts
-                    if (e.type === 'keydown' || e.type === 'keyup' || e.type === 'keypress') {
-                        if (e.altKey && (
-                            (e.key >= '1' && e.key <= '3') || // Alt + 1/2/3
-                            (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key)) // Alt + Shift + C/R/P/N
-                        )) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            e.stopImmediatePropagation();
-                            return false; // Prevent xterm from handling this key
-                        }
+            // Override xterm's attachCustomKeyEventHandler to intercept Alt key combinations
+            term.attachCustomKeyEventHandler((e) => {
+                // Only block our specific Alt shortcuts on keydown
+                if (e.type === 'keydown' && e.altKey) {
+                    if ((e.key >= '1' && e.key <= '3') || // Alt + 1/2/3
+                        (e.shiftKey && ['C', 'R', 'P', 'N', 'c', 'r', 'p', 'n'].includes(e.key))) { // Alt + Shift + C/R/P/N
+                        return false; // Prevent xterm from handling this key
                     }
-                    return true; // Let xterm handle other keys normally
-                });
-            };
-            
-            // Attach initially
-            attachKeyHandler();
-            
-            // Re-attach after any data is written to terminal
-            term.onWriteParsed(() => {
-                // Re-attach the key handler after terminal updates
-                setTimeout(() => {
-                    attachKeyHandler();
-                }, 10);
+                }
+                return true; // Let xterm handle other keys normally
             });
             
             // Also intercept at the terminal element level
@@ -932,11 +912,6 @@
                     e.stopImmediatePropagation();
                 }
             }, true);
-            
-            // Re-attach handler when terminal gets focus
-            term.onFocus(() => {
-                attachKeyHandler();
-            });
             
             // Handle terminal input - but filter out our Alt shortcuts
             term.onData((data) => {
