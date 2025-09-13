@@ -241,41 +241,42 @@
         }
         
         .input-panel.collapsed {
-            height: 32px;
-            padding: 4px 12px;
-            overflow: hidden;
+            display: none;
         }
         
         .panel-toggle {
-            position: absolute;
-            top: 8px;
-            right: 12px;
-            width: 24px;
-            height: 24px;
-            background: transparent;
-            border: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
             color: #999;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
-            transition: background-color 0.2s;
+            border-radius: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 50;
         }
         
         .panel-toggle:hover {
             background-color: #3e3e42;
             color: #ccc;
+            transform: scale(1.05);
         }
         
         .panel-toggle svg {
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             fill: currentColor;
             transition: transform 0.3s;
         }
         
-        .input-panel.collapsed .panel-toggle svg {
+        .panel-toggle.collapsed svg {
             transform: rotate(180deg);
         }
         
@@ -616,11 +617,6 @@
         
         <!-- Input panel -->
         <div class="input-panel" id="inputPanel" style="display: none;">
-            <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">
-                <svg viewBox="0 0 24 24">
-                    <path d="M7 10l5 5 5-5z"/>
-                </svg>
-            </button>
             <textarea class="input-field" id="inputField" 
                 placeholder="Type your command... (Enter to send, Shift+Enter for new line)"></textarea>
             <button class="send-button" id="sendButton">
@@ -629,6 +625,13 @@
                 </svg>
             </button>
         </div>
+        
+        <!-- Panel toggle button -->
+        <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" style="display: none;">
+            <svg viewBox="0 0 24 24">
+                <path d="M7 10l5 5 5-5z"/>
+            </svg>
+        </button>
         
         <!-- Drag overlay -->
         <div class="drag-overlay" id="dragOverlay">
@@ -996,21 +999,26 @@
         
         function togglePanel() {
             const inputPanel = document.getElementById('inputPanel');
-            inputPanel.classList.toggle('collapsed');
-            
-            // Adjust terminal height when panel is collapsed/expanded
+            const panelToggle = document.getElementById('panelToggle');
             const terminalWrapper = document.querySelector('.terminal-wrapper');
-            if (inputPanel.classList.contains('collapsed')) {
-                terminalWrapper.style.height = 'calc(100% - 32px)';
-            } else {
+            
+            if (inputPanel.style.display === 'none' || inputPanel.style.display === '') {
+                // Panel is hidden, show it
+                inputPanel.style.display = 'flex';
+                panelToggle.classList.remove('collapsed');
                 terminalWrapper.style.height = '';
+            } else {
+                // Panel is visible, hide it
+                inputPanel.style.display = 'none';
+                panelToggle.classList.add('collapsed');
+                terminalWrapper.style.height = '100%';
             }
             
             // Refit terminal after toggle
             if (fitAddon) {
                 setTimeout(() => {
                     fitAddon.fit();
-                }, 300); // Wait for animation to complete
+                }, 100);
             }
         }
         
@@ -1157,6 +1165,7 @@
         function showTerminal() {
             document.getElementById('terminal').style.display = 'block';
             document.getElementById('inputPanel').style.display = 'flex';
+            document.getElementById('panelToggle').style.display = 'flex';
             document.getElementById('noSessionMessage').style.display = 'none';
             
             if (fitAddon) {
@@ -1172,6 +1181,7 @@
         function showNoSession() {
             document.getElementById('terminal').style.display = 'none';
             document.getElementById('inputPanel').style.display = 'none';
+            document.getElementById('panelToggle').style.display = 'none';
             document.getElementById('noSessionMessage').style.display = 'block';
             document.getElementById('currentSessionName').textContent = 'No Session';
         }
