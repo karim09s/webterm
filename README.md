@@ -53,7 +53,7 @@ A web-based terminal emulator with persistent session management, multi-session 
 
 ### Setup
 ```bash
-git clone https://github.com/yourusername/webterm.git
+git clone https://github.com/MathToML/webterm.git
 cd webterm
 npm install
 ```
@@ -128,7 +128,6 @@ webterm/
 ## Known Limitations
 
 - Terminal size is fixed on session creation
-- File uploads are stored locally on the server
 - Sessions are stored in memory (lost on server restart)
 
 ## Contributing
