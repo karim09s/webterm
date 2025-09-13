@@ -1,0 +1,30 @@
+{
+  "name": "webterm",
+  "version": "2.0.0",
+  "description": "Web-based terminal with persistent session management",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "terminal",
+    "web-terminal",
+    "session-management",
+    "xterm",
+    "persistent-sessions"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "node-pty": "^0.10.1",
+    "socket.io": "^4.6.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

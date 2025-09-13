@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebTerm - Persistent Terminal Sessions</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e1e;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #cccccc;
+            overflow: hidden;
+        }
+        
+        /* Header with hamburger menu */
+        .header {
+            height: 48px;
+            background-color: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .hamburger-menu {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .hamburger-menu:hover {
+            background-color: #3e3e42;
+        }
+        
+        .hamburger-line {
+            width: 18px;
+            height: 2px;
+            background-color: #cccccc;
+            margin: 2px 0;
+            transition: 0.3s;
+        }
+        
+        .session-info {
+            margin-left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .session-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .session-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+        }
+        
+        .status-dot.disconnected {
+            background-color: #ff6b6b;
+        }
+        
+        /* Sidebar menu */
+        .sidebar {
+            position: fixed;
+            top: 48px;
+            left: -320px;
+            width: 320px;
+            height: calc(100vh - 48px);
+            background-color: #252526;
+            border-right: 1px solid #3e3e42;
+            transition: left 0.3s;
+            z-index: 99;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            left: 0;
+        }
+        
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #3e3e42;
+        }
+        
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        
+        .new-session-btn {
+            width: 100%;
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+        
+        .new-session-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .session-list {
+            padding: 8px;
+        }
+        
+        .session-item {
+            padding: 12px;
+            margin: 4px 0;
+            background-color: #2d2d30;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        
+        .session-item:hover {
+            background-color: #3e3e42;
+        }
+        
+        .session-item.active {
+            background-color: #094771;
+        }
+        
+        .session-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .session-item-name {
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .session-item-actions {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .session-action-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background-color: transparent;
+            color: #999;
+            cursor: pointer;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        .session-action-btn:hover {
+            background-color: #3e3e42;
+            color: #ccc;
+        }
+        
+        .session-action-btn.danger:hover {
+            background-color: #5a1e1e;
+            color: #ff6b6b;
+        }
+        
+        .session-item-meta {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        /* Terminal container */
+        .terminal-container {
+            height: calc(100vh - 48px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .terminal-wrapper {
+            flex: 1;
+            position: relative;
+            background-color: #1e1e1e;
+            overflow: hidden;
+        }
+        
+        #terminal {
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+        }
+        
+        /* Input panel */
+        .input-panel {
+            background-color: #2d2d30;
+            border-top: 1px solid #3e3e42;
+            padding: 12px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+        
+        .input-field {
+            flex: 1;
+            background-color: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 8px 12px;
+            color: #cccccc;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 36px;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .send-button {
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .send-button:hover {
+            background-color: #45a049;
+        }
+        
+        .send-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        
+        /* Overlay for sidebar backdrop */
+        .sidebar-overlay {
+            position: fixed;
+            top: 48px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 48px);
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 98;
+        }
+        
+        .sidebar-overlay.open {
+            display: block;
+        }
+        
+        /* No session message */
+        .no-session {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+        }
+        
+        .no-session h2 {
+            margin-bottom: 16px;
+            color: #999;
+        }
+        
+        .no-session p {
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        
+        /* Rename dialog */
+        .rename-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 6px;
+            padding: 20px;
+            width: 300px;
+            z-index: 101;
+            display: none;
+        }
+        
+        .rename-dialog.open {
+            display: block;
+        }
+        
+        .rename-dialog h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .rename-input {
+            width: 100%;
+            padding: 8px;
+            background-color: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: #ccc;
+            margin-bottom: 12px;
+        }
+        
+        .rename-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        
+        .rename-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .rename-btn.cancel {
+            background-color: #3e3e42;
+            color: #ccc;
+        }
+        
+        .rename-btn.confirm {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        /* Drag and drop */
+        .drag-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            z-index: 20;
+            pointer-events: none;
+        }
+        
+        .drag-overlay.active {
+            display: flex;
+        }
+        
+        .drop-zone {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(76, 175, 80, 0.1);
+            border: 3px dashed #4CAF50;
+            border-radius: 12px;
+            margin: 20px;
+        }
+        
+        .drop-message {
+            background-color: rgba(45, 45, 48, 0.9);
+            padding: 20px 30px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        /* Icons */
+        .icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+        
+        .icon-lg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* VSCode-like terminal styling */
+        .xterm {
+            font-feature-settings: "liga" 0;
+            position: relative;
+            user-select: none;
+            -ms-user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .xterm.focus,
+        .xterm:focus {
+            outline: none;
+        }
+        
+        .xterm .xterm-helpers {
+            position: absolute;
+            top: 0;
+            z-index: 5;
+        }
+        
+        .xterm .xterm-helper-textarea {
+            position: absolute;
+            opacity: 0;
+            left: -9999em;
+            top: 0;
+            width: 0;
+            height: 0;
+            z-index: -5;
+            white-space: nowrap;
+            overflow: hidden;
+            resize: none;
+        }
+        
+        .xterm .xterm-viewport {
+            background-color: #1e1e1e;
+            overflow-y: scroll;
+            cursor: default;
+            position: absolute;
+            right: 0;
+            left: 0;
+            top: 0;
+            bottom: 0;
+        }
+        
+        .xterm .xterm-screen {
+            position: relative;
+            font-family: "Menlo", "Monaco", "Courier New", monospace;
+        }
+        
+        .xterm-screen canvas {
+            font-smooth: never;
+            -webkit-font-smoothing: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="hamburger-menu" id="hamburgerMenu">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+        </div>
+        <div class="session-info">
+            <div class="session-name" id="currentSessionName">No Session</div>
+            <div class="session-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Terminal Sessions</div>
+            <button class="new-session-btn" id="newSessionBtn">+ New Session</button>
+        </div>
+        <div class="session-list" id="sessionList">
+            <!-- Sessions will be dynamically added here -->
+        </div>
+    </div>
+    
+    <!-- Sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Terminal container -->
+    <div class="terminal-container">
+        <div class="terminal-wrapper">
+            <div id="terminal"></div>
+            
+            <!-- No session message -->
+            <div class="no-session" id="noSessionMessage">
+                <h2>No Active Session</h2>
+                <p>Click the hamburger menu to create or select a session</p>
+                <button class="new-session-btn" onclick="createNewSession()">Create New Session</button>
+            </div>
+        </div>
+        
+        <!-- Input panel -->
+        <div class="input-panel" id="inputPanel" style="display: none;">
+            <textarea class="input-field" id="inputField" 
+                placeholder="Type your command... (Enter to send, Cmd/Ctrl+Enter for new line)"></textarea>
+            <button class="send-button" id="sendButton">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Drag overlay -->
+        <div class="drag-overlay" id="dragOverlay">
+            <div class="drop-zone">
+                <div class="drop-message">
+                    <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
+                    Drop files here to upload
+                    <div style="font-size: 12px; font-weight: normal; margin-top: 8px; opacity: 0.8;">
+                        Files will be uploaded and paths inserted
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rename dialog -->
+    <div class="rename-dialog" id="renameDialog">
+        <h3>Rename Session</h3>
+        <input type="text" class="rename-input" id="renameInput" placeholder="Enter new name">
+        <div class="rename-actions">
+            <button class="rename-btn cancel" onclick="closeRenameDialog()">Cancel</button>
+            <button class="rename-btn confirm" onclick="confirmRename()">Rename</button>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Global variables
+        let socket = null;
+        let term = null;
+        let fitAddon = null;
+        let currentSessionId = null;
+        let sessions = [];
+        let renameSessionId = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSocket();
+            initializeTerminal();
+            setupEventListeners();
+            loadSessions();
+            
+            // Check localStorage for last session
+            const lastSessionId = localStorage.getItem('lastSessionId');
+            if (lastSessionId) {
+                connectToSession(lastSessionId);
+            }
+        });
+        
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                updateConnectionStatus(true);
+                loadSessions();
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                updateConnectionStatus(false);
+            });
+            
+            socket.on('sessions-list', (sessionList) => {
+                sessions = sessionList;
+                updateSessionList();
+            });
+            
+            socket.on('session-created', ({ sessionId, sessionInfo }) => {
+                currentSessionId = sessionId;
+                localStorage.setItem('lastSessionId', sessionId);
+                updateCurrentSession(sessionInfo);
+                showTerminal();
+                loadSessions();
+            });
+            
+            socket.on('session-connected', ({ sessionId, sessionInfo }) => {
+                currentSessionId = sessionId;
+                localStorage.setItem('lastSessionId', sessionId);
+                updateCurrentSession(sessionInfo);
+                showTerminal();
+            });
+            
+            socket.on('session-not-found', ({ sessionId }) => {
+                alert(`Session ${sessionId} not found`);
+                localStorage.removeItem('lastSessionId');
+                currentSessionId = null;
+                showNoSession();
+            });
+            
+            socket.on('session-inactive', ({ sessionId }) => {
+                alert(`Session ${sessionId} is no longer active`);
+                loadSessions();
+            });
+            
+            socket.on('session-taken', ({ sessionId }) => {
+                if (currentSessionId === sessionId) {
+                    alert('This session was opened in another window');
+                    currentSessionId = null;
+                    showNoSession();
+                }
+            });
+            
+            socket.on('session-terminated', ({ sessionId }) => {
+                if (currentSessionId === sessionId) {
+                    alert('Session has been terminated');
+                    currentSessionId = null;
+                    showNoSession();
+                }
+                loadSessions();
+            });
+            
+            socket.on('terminal-data', (data) => {
+                if (term) {
+                    term.write(data);
+                }
+            });
+            
+            socket.on('buffer-history', (data) => {
+                if (term) {
+                    term.clear();
+                    term.write(data);
+                }
+            });
+            
+            socket.on('session-list-updated', () => {
+                loadSessions();
+            });
+            
+            socket.on('session-renamed', ({ sessionId, newName }) => {
+                if (currentSessionId === sessionId) {
+                    document.getElementById('currentSessionName').textContent = newName;
+                }
+                loadSessions();
+            });
+        }
+        
+        function initializeTerminal() {
+            term = new Terminal({
+                cursorBlink: true,
+                fontSize: 12,
+                fontFamily: '"Menlo", "Monaco", "Courier New", monospace',
+                fontWeight: "normal",
+                fontWeightBold: "bold",
+                lineHeight: 1.0,
+                letterSpacing: 0,
+                rendererType: 'canvas',
+                customGlyphs: true,
+                drawBoldTextInBrightColors: true,
+                theme: {
+                    background: '#1e1e1e',
+                    foreground: '#cccccc',
+                    cursor: '#cccccc',
+                    cursorAccent: '#1e1e1e',
+                    selection: '#264f78',
+                    black: '#000000',
+                    red: '#cd3131',
+                    green: '#0dbc79',
+                    yellow: '#e5e510',
+                    blue: '#2472c8',
+                    magenta: '#bc3fbc',
+                    cyan: '#11a8cd',
+                    white: '#e5e5e5',
+                    brightBlack: '#666666',
+                    brightRed: '#f14c4c',
+                    brightGreen: '#23d18b',
+                    brightYellow: '#f5f543',
+                    brightBlue: '#3b8eea',
+                    brightMagenta: '#d670d6',
+                    brightCyan: '#29b8db',
+                    brightWhite: '#e5e5e5'
+                }
+            });
+            
+            fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+            
+            term.open(document.getElementById('terminal'));
+            fitAddon.fit();
+            
+            // Handle terminal input
+            term.onData((data) => {
+                if (currentSessionId) {
+                    socket.emit('terminal-input', {
+                        sessionId: currentSessionId,
+                        data: data
+                    });
+                }
+            });
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                if (fitAddon) {
+                    fitAddon.fit();
+                    if (currentSessionId) {
+                        socket.emit('terminal-resize', {
+                            sessionId: currentSessionId,
+                            cols: term.cols,
+                            rows: term.rows
+                        });
+                    }
+                }
+            });
+        }
+        
+        function setupEventListeners() {
+            // Hamburger menu
+            document.getElementById('hamburgerMenu').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+            
+            // New session button
+            document.getElementById('newSessionBtn').addEventListener('click', createNewSession);
+            
+            // Input field
+            const inputField = document.getElementById('inputField');
+            const sendButton = document.getElementById('sendButton');
+            
+            inputField.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    sendInput();
+                } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    // Allow new line
+                }
+            });
+            
+            sendButton.addEventListener('click', sendInput);
+            
+            // Drag and drop
+            setupDragAndDrop();
+        }
+        
+        function setupDragAndDrop() {
+            const dragOverlay = document.getElementById('dragOverlay');
+            const terminalWrapper = document.querySelector('.terminal-wrapper');
+            const inputPanel = document.querySelector('.input-panel');
+            const inputField = document.getElementById('inputField');
+            
+            // Track which area is being dragged over
+            let currentDropTarget = null;
+            
+            // Prevent defaults for all drag events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Terminal wrapper drag events
+            ['dragenter', 'dragover'].forEach(eventName => {
+                terminalWrapper.addEventListener(eventName, (e) => {
+                    preventDefaults(e);
+                    currentDropTarget = 'terminal';
+                    dragOverlay.classList.add('active');
+                }, false);
+            });
+            
+            terminalWrapper.addEventListener('dragleave', (e) => {
+                preventDefaults(e);
+                if (!terminalWrapper.contains(e.relatedTarget)) {
+                    dragOverlay.classList.remove('active');
+                    currentDropTarget = null;
+                }
+            });
+            
+            terminalWrapper.addEventListener('drop', async (e) => {
+                preventDefaults(e);
+                dragOverlay.classList.remove('active');
+                const files = [...e.dataTransfer.files];
+                
+                for (const file of files) {
+                    await uploadFile(file, 'terminal');
+                }
+                currentDropTarget = null;
+            }, false);
+            
+            // Input panel drag events
+            ['dragenter', 'dragover'].forEach(eventName => {
+                inputPanel.addEventListener(eventName, (e) => {
+                    preventDefaults(e);
+                    currentDropTarget = 'input';
+                    inputField.style.borderColor = '#4CAF50';
+                    inputField.style.boxShadow = '0 0 0 2px rgba(76, 175, 80, 0.3)';
+                }, false);
+            });
+            
+            inputPanel.addEventListener('dragleave', (e) => {
+                preventDefaults(e);
+                if (!inputPanel.contains(e.relatedTarget)) {
+                    inputField.style.borderColor = '';
+                    inputField.style.boxShadow = '';
+                    currentDropTarget = null;
+                }
+            });
+            
+            inputPanel.addEventListener('drop', async (e) => {
+                preventDefaults(e);
+                inputField.style.borderColor = '';
+                inputField.style.boxShadow = '';
+                const files = [...e.dataTransfer.files];
+                
+                for (const file of files) {
+                    await uploadFile(file, 'input');
+                }
+                currentDropTarget = null;
+            }, false);
+        }
+        
+        async function uploadFile(file, target) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const escapedPath = shellEscape(result.path);
+                    
+                    if (target === 'terminal') {
+                        // Send path to terminal
+                        if (currentSessionId) {
+                            socket.emit('terminal-input', {
+                                sessionId: currentSessionId,
+                                data: escapedPath
+                            });
+                        }
+                    } else if (target === 'input') {
+                        // Insert path into input field
+                        const inputField = document.getElementById('inputField');
+                        const currentValue = inputField.value;
+                        const newValue = currentValue ? currentValue + ' ' + escapedPath : escapedPath;
+                        inputField.value = newValue;
+                        
+                        // Auto-resize the input field
+                        inputField.style.height = '36px';
+                        inputField.style.height = Math.min(inputField.scrollHeight, 120) + 'px';
+                    }
+                }
+            } catch (error) {
+                console.error('Upload failed:', error);
+                alert('File upload failed: ' + error.message);
+            }
+        }
+        
+        function shellEscape(path) {
+            if (path.includes(' ') || path.includes('(') || path.includes(')') || 
+                path.includes('&') || path.includes(';') || path.includes('|')) {
+                return `"${path.replace(/"/g, '\\"')}"`;
+            }
+            return path;
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+        
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+        }
+        
+        function loadSessions() {
+            socket.emit('list-sessions');
+        }
+        
+        function updateSessionList() {
+            const sessionList = document.getElementById('sessionList');
+            sessionList.innerHTML = '';
+            
+            if (sessions.length === 0) {
+                sessionList.innerHTML = '<div style="padding: 16px; text-align: center; color: #666;">No active sessions</div>';
+                return;
+            }
+            
+            sessions.forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'session-item';
+                if (session.id === currentSessionId) {
+                    item.classList.add('active');
+                }
+                
+                const lastAccessed = new Date(session.lastAccessedAt);
+                const timeAgo = getTimeAgo(lastAccessed);
+                
+                item.innerHTML = `
+                    <div class="session-item-header">
+                        <div class="session-item-name">
+                            <div class="status-dot ${session.isActive ? '' : 'disconnected'}"></div>
+                            ${session.name}
+                        </div>
+                        <div class="session-item-actions">
+                            <button class="session-action-btn" onclick="renameSession('${session.id}', '${session.name}')">✏️</button>
+                            <button class="session-action-btn danger" onclick="terminateSession('${session.id}')">✕</button>
+                        </div>
+                    </div>
+                    <div class="session-item-meta">
+                        Last accessed: ${timeAgo}
+                    </div>
+                `;
+                
+                item.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('session-action-btn')) {
+                        connectToSession(session.id);
+                        closeSidebar();
+                    }
+                });
+                
+                sessionList.appendChild(item);
+            });
+        }
+        
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+        
+        function createNewSession() {
+            const name = prompt('Session name (optional):') || null;
+            socket.emit('create-session', { name });
+            closeSidebar();
+        }
+        
+        function connectToSession(sessionId) {
+            socket.emit('connect-to-session', sessionId);
+        }
+        
+        function terminateSession(sessionId) {
+            if (confirm('Are you sure you want to terminate this session?')) {
+                socket.emit('terminate-session', sessionId);
+            }
+        }
+        
+        function renameSession(sessionId, currentName) {
+            renameSessionId = sessionId;
+            const dialog = document.getElementById('renameDialog');
+            const input = document.getElementById('renameInput');
+            
+            input.value = currentName;
+            dialog.classList.add('open');
+            input.focus();
+            input.select();
+        }
+        
+        function closeRenameDialog() {
+            const dialog = document.getElementById('renameDialog');
+            dialog.classList.remove('open');
+            renameSessionId = null;
+        }
+        
+        function confirmRename() {
+            const input = document.getElementById('renameInput');
+            const newName = input.value.trim();
+            
+            if (newName && renameSessionId) {
+                socket.emit('rename-session', {
+                    sessionId: renameSessionId,
+                    newName: newName
+                });
+            }
+            
+            closeRenameDialog();
+        }
+        
+        function updateCurrentSession(sessionInfo) {
+            document.getElementById('currentSessionName').textContent = sessionInfo.name;
+            updateConnectionStatus(sessionInfo.isActive);
+        }
+        
+        function updateConnectionStatus(connected) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                statusDot.classList.remove('disconnected');
+                statusText.textContent = 'Connected';
+            } else {
+                statusDot.classList.add('disconnected');
+                statusText.textContent = 'Disconnected';
+            }
+        }
+        
+        function showTerminal() {
+            document.getElementById('terminal').style.display = 'block';
+            document.getElementById('inputPanel').style.display = 'flex';
+            document.getElementById('noSessionMessage').style.display = 'none';
+            
+            if (fitAddon) {
+                fitAddon.fit();
+            }
+        }
+        
+        function showNoSession() {
+            document.getElementById('terminal').style.display = 'none';
+            document.getElementById('inputPanel').style.display = 'none';
+            document.getElementById('noSessionMessage').style.display = 'block';
+            document.getElementById('currentSessionName').textContent = 'No Session';
+        }
+        
+        async function sendInput() {
+            const inputField = document.getElementById('inputField');
+            const message = inputField.value;
+            
+            if (!message || !currentSessionId) return;
+            
+            // Method 1: Try to use terminal paste functionality first
+            // Check if server supports terminal-paste
+            socket.emit('terminal-paste', {
+                sessionId: currentSessionId,
+                data: message
+            });
+            
+            // Give a small delay then send Enter
+            await new Promise(resolve => setTimeout(resolve, 50));
+            socket.emit('terminal-input', {
+                sessionId: currentSessionId,
+                data: '\r'
+            });
+            
+            inputField.value = '';
+            inputField.style.height = '36px';
+        }
+        
+        // Auto-resize textarea
+        document.getElementById('inputField').addEventListener('input', function() {
+            this.style.height = '36px';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    </script>
+</body>
+</html>
