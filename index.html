@@ -684,6 +684,7 @@
             initializeSocket();
             initializeTerminal();
             setupEventListeners();
+            setupKeyboardShortcuts();
             loadSessions();
             
             // Check localStorage for last session
@@ -876,6 +877,86 @@
             
             // Drag and drop
             setupDragAndDrop();
+        }
+        
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Check for Alt + Shift combinations
+                if (e.altKey && e.shiftKey) {
+                    switch(e.key.toUpperCase()) {
+                        case 'N':
+                            // Alt + Shift + N: New session
+                            e.preventDefault();
+                            createNewSession();
+                            break;
+                            
+                        case 'R':
+                            // Alt + Shift + R: Rename current session
+                            e.preventDefault();
+                            if (currentSessionId) {
+                                const currentSession = sessions.find(s => s.id === currentSessionId);
+                                if (currentSession) {
+                                    renameSession(currentSessionId, currentSession.name);
+                                }
+                            }
+                            break;
+                            
+                        case 'X':
+                            // Alt + Shift + X: Terminate current session
+                            e.preventDefault();
+                            if (currentSessionId) {
+                                if (confirm('Are you sure you want to terminate the current session?')) {
+                                    terminateSession(currentSessionId);
+                                }
+                            }
+                            break;
+                            
+                        case 'ARROWUP':
+                            // Alt + Shift + Up: Previous session
+                            e.preventDefault();
+                            switchToPreviousSession();
+                            break;
+                            
+                        case 'ARROWDOWN':
+                            // Alt + Shift + Down: Next session
+                            e.preventDefault();
+                            switchToNextSession();
+                            break;
+                    }
+                }
+            });
+        }
+        
+        function switchToPreviousSession() {
+            if (sessions.length === 0) return;
+            
+            const currentIndex = sessions.findIndex(s => s.id === currentSessionId);
+            let previousIndex = currentIndex - 1;
+            
+            if (previousIndex < 0) {
+                previousIndex = sessions.length - 1;
+            }
+            
+            if (sessions[previousIndex] && sessions[previousIndex].isActive) {
+                connectToSession(sessions[previousIndex].id);
+                closeSidebar();
+            }
+        }
+        
+        function switchToNextSession() {
+            if (sessions.length === 0) return;
+            
+            const currentIndex = sessions.findIndex(s => s.id === currentSessionId);
+            let nextIndex = currentIndex + 1;
+            
+            if (nextIndex >= sessions.length) {
+                nextIndex = 0;
+            }
+            
+            if (sessions[nextIndex] && sessions[nextIndex].isActive) {
+                connectToSession(sessions[nextIndex].id);
+                closeSidebar();
+            }
         }
         
         function setupDragAndDrop() {
@@ -1114,8 +1195,8 @@
         }
         
         function createNewSession() {
-            const name = prompt('Session name (optional):') || null;
-            socket.emit('create-session', { name });
+            // Create session with default name
+            socket.emit('create-session', { name: null });
             closeSidebar();
         }
         
