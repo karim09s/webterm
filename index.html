@@ -469,6 +469,31 @@
             bottom: 0;
         }
         
+        /* Custom scrollbar styling */
+        .xterm .xterm-viewport::-webkit-scrollbar {
+            width: 12px;
+            background-color: #1e1e1e;
+        }
+        
+        .xterm .xterm-viewport::-webkit-scrollbar-track {
+            background-color: #1e1e1e;
+            border-left: 1px solid #3e3e42;
+        }
+        
+        .xterm .xterm-viewport::-webkit-scrollbar-thumb {
+            background-color: #424242;
+            border-radius: 6px;
+            border: 2px solid #1e1e1e;
+        }
+        
+        .xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+            background-color: #4e4e4e;
+        }
+        
+        .xterm .xterm-viewport::-webkit-scrollbar-thumb:active {
+            background-color: #5a5a5a;
+        }
+        
         .xterm .xterm-screen {
             position: relative;
             font-family: "Menlo", "Monaco", "Courier New", monospace;
@@ -686,6 +711,7 @@
                 rendererType: 'canvas',
                 customGlyphs: true,
                 drawBoldTextInBrightColors: true,
+                scrollback: 10000,
                 theme: {
                     background: '#1e1e1e',
                     foreground: '#cccccc',
