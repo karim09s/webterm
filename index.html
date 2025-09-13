@@ -748,6 +748,10 @@
                 localStorage.setItem('lastSessionId', sessionId);
                 updateCurrentSession(sessionInfo);
                 showTerminal();
+                // Clear terminal for new session
+                if (term) {
+                    term.clear();
+                }
                 loadSessions();
             });
             
