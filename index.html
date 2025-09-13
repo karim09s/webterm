@@ -1244,12 +1244,20 @@
         }
         
         function createNewSession() {
+            // Disconnect from current session first if any
+            if (currentSessionId) {
+                socket.emit('disconnect-from-session', currentSessionId);
+            }
             // Create session with default name
             socket.emit('create-session', { name: null });
             closeSidebar();
         }
         
         function connectToSession(sessionId) {
+            // Disconnect from current session first if any
+            if (currentSessionId && currentSessionId !== sessionId) {
+                socket.emit('disconnect-from-session', currentSessionId);
+            }
             socket.emit('connect-to-session', sessionId);
         }
         

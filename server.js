@@ -208,6 +208,16 @@ io.on('connection', (socket) => {
     console.log(`Created new session: ${sessionId} (${session.name})`);
   });
   
+  // Disconnect from current session
+  socket.on('disconnect-from-session', (sessionId) => {
+    const session = sessions.get(sessionId);
+    
+    if (session && session.currentSocket && session.currentSocket.id === socket.id) {
+      session.disconnect();
+      console.log(`Client ${socket.id} disconnected from session ${sessionId}`);
+    }
+  });
+  
   // Connect to existing session
   socket.on('connect-to-session', (sessionId) => {
     const session = sessions.get(sessionId);
