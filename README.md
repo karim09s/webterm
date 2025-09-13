@@ -22,7 +22,7 @@ A web-based terminal emulator with persistent session management, multi-session 
   - Maximum file size: 100MB
   - **Designed for AI tools**: Path insertion is optimized for tools like Claude that can read files from provided paths
   - Perfect for quickly sharing images/files with AI assistants - just drop and the path is ready
-- **Image Preview**: Dropped images are displayed inline in the terminal before upload
+  - **Visual Feedback**: Drop zone highlights when dragging files over the terminal
 - **Smart Path Insertion**: Paths with spaces are automatically quoted
 
 ### Input Methods

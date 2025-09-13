@@ -1045,7 +1045,13 @@
                     e.preventDefault();
                     sendInput();
                 } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                    // Allow new line
+                    // Insert new line manually for Safari compatibility
+                    e.preventDefault();
+                    const start = inputField.selectionStart;
+                    const end = inputField.selectionEnd;
+                    const value = inputField.value;
+                    inputField.value = value.substring(0, start) + '\n' + value.substring(end);
+                    inputField.selectionStart = inputField.selectionEnd = start + 1;
                 }
             });
             
