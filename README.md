@@ -8,7 +8,6 @@ A web-based terminal emulator with persistent session management, multi-session 
 - Terminal sessions remain active even after closing the browser
 - Reconnect to previous sessions with full history preserved
 - Output buffer retention (last 1000 lines per session)
-- Sessions auto-cleanup after 24 hours of inactivity
 
 ### Multi-Session Management
 - Create and manage multiple independent terminal sessions

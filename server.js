@@ -401,18 +401,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Clean up inactive sessions periodically (optional)
-setInterval(() => {
-  const now = new Date();
-  const maxInactiveTime = 24 * 60 * 60 * 1000; // 24 hours
-  
-  for (const [id, session] of sessions.entries()) {
-    if (!session.isActive && (now - session.lastAccessedAt) > maxInactiveTime) {
-      sessions.delete(id);
-      console.log(`Cleaned up inactive session: ${id}`);
-    }
-  }
-}, 60 * 60 * 1000); // Check every hour
+// Auto-cleanup removed - manage sessions manually
 
 server.listen(PORT, () => {
   console.log(`WebTerm Server running on http://localhost:${PORT}`);
