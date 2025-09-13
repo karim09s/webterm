@@ -1,6 +1,6 @@
 # WebTerm
 
-A web-based terminal emulator with persistent session management, multi-session support, and seamless file handling.
+A web-based terminal interface that provides browser access to real system terminals with persistent session management, multi-session support, and seamless file handling.
 
 ## Features
 
