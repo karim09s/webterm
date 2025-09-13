@@ -685,6 +685,8 @@
         let currentSessionId = null;
         let sessions = [];
         let renameSessionId = null;
+        let sessionBuffers = new Map(); // Store buffers for each session
+        let subscribedSessions = new Set(); // Track subscribed sessions
         
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -697,7 +699,8 @@
             // Check localStorage for last session
             const lastSessionId = localStorage.getItem('lastSessionId');
             if (lastSessionId) {
-                connectToSession(lastSessionId);
+                // Will be handled after sessions list is loaded
+                currentSessionId = lastSessionId;
             }
         });
         
@@ -718,6 +721,12 @@
             socket.on('sessions-list', (sessionList) => {
                 sessions = sessionList;
                 updateSessionList();
+                // Subscribe to all active sessions
+                sessionList.forEach(session => {
+                    if (session.isActive && !subscribedSessions.has(session.id)) {
+                        subscribeToSession(session.id);
+                    }
+                });
             });
             
             socket.on('session-created', ({ sessionId, sessionInfo }) => {
@@ -728,12 +737,12 @@
                 loadSessions();
             });
             
-            socket.on('session-connected', ({ sessionId, sessionInfo }) => {
-                currentSessionId = sessionId;
-                localStorage.setItem('lastSessionId', sessionId);
-                updateCurrentSession(sessionInfo);
-                showTerminal();
-                loadSessions();  // Update session list to show active state
+            socket.on('session-subscribed', ({ sessionId, sessionInfo }) => {
+                subscribedSessions.add(sessionId);
+                if (!sessionBuffers.has(sessionId)) {
+                    sessionBuffers.set(sessionId, []);
+                }
+                console.log(`Subscribed to session ${sessionId}`);
             });
             
             socket.on('session-not-found', ({ sessionId }) => {
@@ -757,6 +766,10 @@
             });
             
             socket.on('session-terminated', ({ sessionId }) => {
+                // Remove from subscribed sessions
+                subscribedSessions.delete(sessionId);
+                sessionBuffers.delete(sessionId);
+                
                 if (currentSessionId === sessionId) {
                     alert('Session has been terminated');
                     currentSessionId = null;
@@ -765,14 +778,27 @@
                 loadSessions();
             });
             
-            socket.on('terminal-data', (data) => {
-                if (term) {
+            socket.on('terminal-data', ({ sessionId, data }) => {
+                // Store data in session buffer
+                if (!sessionBuffers.has(sessionId)) {
+                    sessionBuffers.set(sessionId, []);
+                }
+                sessionBuffers.get(sessionId).push(data);
+                
+                // Only display if this is the current session
+                if (sessionId === currentSessionId && term) {
                     term.write(data);
                 }
             });
             
-            socket.on('buffer-history', (data) => {
-                if (term) {
+            socket.on('buffer-history', ({ sessionId, data }) => {
+                // Store buffer history
+                if (!sessionBuffers.has(sessionId)) {
+                    sessionBuffers.set(sessionId, []);
+                }
+                
+                // If this is the current session, display it
+                if (sessionId === currentSessionId && term) {
                     term.clear();
                     term.write(data);
                 }
@@ -1245,21 +1271,49 @@
         }
         
         function createNewSession() {
-            // Disconnect from current session first if any
-            if (currentSessionId) {
-                socket.emit('disconnect-from-session', currentSessionId);
-            }
             // Create session with default name
             socket.emit('create-session', { name: null });
             closeSidebar();
         }
         
-        function connectToSession(sessionId) {
-            // Disconnect from current session first if any
-            if (currentSessionId && currentSessionId !== sessionId) {
-                socket.emit('disconnect-from-session', currentSessionId);
+        function subscribeToSession(sessionId) {
+            if (!subscribedSessions.has(sessionId)) {
+                socket.emit('subscribe-to-session', sessionId);
             }
-            socket.emit('connect-to-session', sessionId);
+        }
+        
+        function switchToSession(sessionId) {
+            if (sessionId === currentSessionId) return;
+            
+            // Update current session
+            currentSessionId = sessionId;
+            localStorage.setItem('lastSessionId', sessionId);
+            
+            // Clear terminal and show buffered content for this session
+            if (term) {
+                term.clear();
+                const buffer = sessionBuffers.get(sessionId);
+                if (buffer) {
+                    buffer.forEach(data => term.write(data));
+                }
+            }
+            
+            // Update UI
+            const session = sessions.find(s => s.id === sessionId);
+            if (session) {
+                updateCurrentSession(session);
+                showTerminal();
+            }
+            updateSessionList();
+        }
+        
+        function connectToSession(sessionId) {
+            // Subscribe if not already subscribed
+            if (!subscribedSessions.has(sessionId)) {
+                subscribeToSession(sessionId);
+            }
+            // Switch to the session
+            switchToSession(sessionId);
         }
         
         function terminateSession(sessionId) {

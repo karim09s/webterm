@@ -69,7 +69,7 @@ class TerminalSession {
     this.createdAt = new Date();
     this.lastAccessedAt = new Date();
     this.buffer = [];
-    this.currentSocket = null;
+    this.subscribedSockets = new Set(); // Changed from single socket to Set of sockets
     this.ptyProcess = null;
     this.isActive = false;
     
@@ -105,38 +105,43 @@ class TerminalSession {
         this.buffer = this.buffer.slice(-BUFFER_MAX_LINES);
       }
       
-      // Send to connected client if any
-      if (this.currentSocket) {
-        this.currentSocket.emit('terminal-data', data);
-      }
+      // Send to all subscribed clients with session ID
+      this.subscribedSockets.forEach(socket => {
+        socket.emit('terminal-data', {
+          sessionId: this.id,
+          data: data
+        });
+      });
     });
     
     this.ptyProcess.onExit((exitCode) => {
       console.log(`Session ${this.id} PTY process exited with code: ${exitCode}`);
       this.isActive = false;
-      if (this.currentSocket) {
-        this.currentSocket.emit('terminal-exit', exitCode);
-      }
+      // Notify all subscribed clients
+      this.subscribedSockets.forEach(socket => {
+        socket.emit('terminal-exit', {
+          sessionId: this.id,
+          exitCode: exitCode
+        });
+      });
     });
   }
   
-  connect(socket) {
-    // Disconnect previous socket if any
-    if (this.currentSocket && this.currentSocket.id !== socket.id) {
-      this.currentSocket.emit('session-taken', { sessionId: this.id });
-      this.currentSocket = null;
-    }
-    
-    this.currentSocket = socket;
+  subscribe(socket) {
+    // Add socket to subscribers
+    this.subscribedSockets.add(socket);
     this.lastAccessedAt = new Date();
     
-    // Send buffer history to new connection
+    // Send buffer history to new subscriber
     const recentBuffer = this.buffer.slice(-100); // Send last 100 entries
-    socket.emit('buffer-history', recentBuffer.map(b => b.data).join(''));
+    socket.emit('buffer-history', {
+      sessionId: this.id,
+      data: recentBuffer.map(b => b.data).join('')
+    });
   }
   
-  disconnect() {
-    this.currentSocket = null;
+  unsubscribe(socket) {
+    this.subscribedSockets.delete(socket);
   }
   
   write(data) {
@@ -162,9 +167,11 @@ class TerminalSession {
       this.ptyProcess.kill();
       this.isActive = false;
     }
-    if (this.currentSocket) {
-      this.currentSocket.emit('session-terminated', { sessionId: this.id });
-    }
+    // Notify all subscribers
+    this.subscribedSockets.forEach(socket => {
+      socket.emit('session-terminated', { sessionId: this.id });
+    });
+    this.subscribedSockets.clear();
   }
   
   toJSON() {
@@ -174,7 +181,7 @@ class TerminalSession {
       createdAt: this.createdAt,
       lastAccessedAt: this.lastAccessedAt,
       isActive: this.isActive,
-      isConnected: !!this.currentSocket
+      subscriberCount: this.subscribedSockets.size
     };
   }
 }
@@ -195,7 +202,7 @@ io.on('connection', (socket) => {
     const session = new TerminalSession(sessionId, data?.name);
     sessions.set(sessionId, session);
     
-    session.connect(socket);
+    session.subscribe(socket);
     
     socket.emit('session-created', {
       sessionId: sessionId,
@@ -208,18 +215,8 @@ io.on('connection', (socket) => {
     console.log(`Created new session: ${sessionId} (${session.name})`);
   });
   
-  // Disconnect from current session
-  socket.on('disconnect-from-session', (sessionId) => {
-    const session = sessions.get(sessionId);
-    
-    if (session && session.currentSocket && session.currentSocket.id === socket.id) {
-      session.disconnect();
-      console.log(`Client ${socket.id} disconnected from session ${sessionId}`);
-    }
-  });
-  
-  // Connect to existing session
-  socket.on('connect-to-session', (sessionId) => {
+  // Subscribe to session
+  socket.on('subscribe-to-session', (sessionId) => {
     const session = sessions.get(sessionId);
     
     if (!session) {
@@ -232,13 +229,23 @@ io.on('connection', (socket) => {
       return;
     }
     
-    session.connect(socket);
-    socket.emit('session-connected', {
+    session.subscribe(socket);
+    socket.emit('session-subscribed', {
       sessionId: sessionId,
       sessionInfo: session.toJSON()
     });
     
-    console.log(`Client ${socket.id} connected to session ${sessionId}`);
+    console.log(`Client ${socket.id} subscribed to session ${sessionId}`);
+  });
+  
+  // Unsubscribe from session
+  socket.on('unsubscribe-from-session', (sessionId) => {
+    const session = sessions.get(sessionId);
+    
+    if (session) {
+      session.unsubscribe(socket);
+      console.log(`Client ${socket.id} unsubscribed from session ${sessionId}`);
+    }
   });
   
   // Rename session
@@ -302,12 +309,9 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     
-    // Find and disconnect from any active session
+    // Unsubscribe from all sessions
     for (const session of sessions.values()) {
-      if (session.currentSocket && session.currentSocket.id === socket.id) {
-        session.disconnect();
-        break;
-      }
+      session.unsubscribe(socket);
     }
   });
 });
