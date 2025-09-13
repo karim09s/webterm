@@ -733,6 +733,7 @@
                 localStorage.setItem('lastSessionId', sessionId);
                 updateCurrentSession(sessionInfo);
                 showTerminal();
+                loadSessions();  // Update session list to show active state
             });
             
             socket.on('session-not-found', ({ sessionId }) => {
