@@ -751,6 +751,10 @@
                 // Clear terminal for new session
                 if (term) {
                     term.clear();
+                    // Focus terminal after creating new session
+                    setTimeout(() => {
+                        term.focus();
+                    }, 100);
                 }
                 loadSessions();
             });
@@ -820,6 +824,10 @@
                 if (sessionId === currentSessionId && term) {
                     term.clear();
                     term.write(data);
+                    // Restore focus after buffer is displayed
+                    setTimeout(() => {
+                        term.focus();
+                    }, 50);
                 }
             });
             
@@ -1256,6 +1264,13 @@
             
             sidebar.classList.remove('open');
             overlay.classList.remove('open');
+            
+            // Restore focus to terminal after closing sidebar
+            if (term && currentSessionId) {
+                setTimeout(() => {
+                    term.focus();
+                }, 100);
+            }
         }
         
         function loadSessions() {
@@ -1353,6 +1368,13 @@
                 showTerminal();
             }
             updateSessionList();
+            
+            // Restore terminal focus after switching
+            setTimeout(() => {
+                if (term && currentSessionId) {
+                    term.focus();
+                }
+            }, 100);
         }
         
         function connectToSession(sessionId) {
