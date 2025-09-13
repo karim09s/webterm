@@ -20,15 +20,21 @@ A web-based terminal emulator with persistent session management, multi-session 
   - Files are uploaded to `~/wt_upload/` directory
   - File path automatically inserted at cursor position
   - Maximum file size: 100MB
+  - **Designed for AI tools**: Path insertion is optimized for tools like Claude that can read files from provided paths
+  - Perfect for quickly sharing images/files with AI assistants - just drop and the path is ready
 - **Image Preview**: Dropped images are displayed inline in the terminal before upload
 - **Smart Path Insertion**: Paths with spaces are automatically quoted
 
 ### Input Methods
-- **Standard Input**: Type commands in the bottom input panel
+- **Bottom Input Panel**: A dedicated text field for reliable input
+  - Essential for non-English languages (Korean, Japanese, Chinese, etc.)
+  - Mobile browsers often fail to properly handle IME input in xterm.js
+  - Provides a workaround for complex character input
+  - Can be hidden/collapsed if you only use English
 - **Multi-line Support**:
   - `Enter`: Execute command
   - `Cmd/Ctrl + Enter`: Insert line break
-- **Direct Terminal Input**: Click on terminal to type directly
+- **Direct Terminal Input**: Click on terminal to type directly (works best with English)
 
 ## Keyboard Shortcuts
 
