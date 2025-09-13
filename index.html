@@ -696,12 +696,7 @@
             setupKeyboardShortcuts();
             loadSessions();
             
-            // Check localStorage for last session
-            const lastSessionId = localStorage.getItem('lastSessionId');
-            if (lastSessionId) {
-                // Will be handled after sessions list is loaded
-                currentSessionId = lastSessionId;
-            }
+            // Last session will be restored when sessions list is loaded
         });
         
         function initializeSocket() {
@@ -721,12 +716,31 @@
             socket.on('sessions-list', (sessionList) => {
                 sessions = sessionList;
                 updateSessionList();
+                
                 // Subscribe to all active sessions
                 sessionList.forEach(session => {
                     if (session.isActive && !subscribedSessions.has(session.id)) {
                         subscribeToSession(session.id);
                     }
                 });
+                
+                // If we have a lastSessionId and haven't connected yet, try to connect
+                const lastSessionId = localStorage.getItem('lastSessionId');
+                if (lastSessionId && !currentSessionId) {
+                    const session = sessionList.find(s => s.id === lastSessionId);
+                    if (session && session.isActive) {
+                        connectToSession(lastSessionId);
+                    } else {
+                        // Session doesn't exist or is inactive
+                        localStorage.removeItem('lastSessionId');
+                        if (sessionList.length === 0) {
+                            showNoSession();
+                        }
+                    }
+                } else if (!currentSessionId && sessionList.length === 0) {
+                    // No current session and no sessions available
+                    showNoSession();
+                }
             });
             
             socket.on('session-created', ({ sessionId, sessionInfo }) => {
